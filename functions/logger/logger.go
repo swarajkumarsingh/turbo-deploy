@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 )
-
 var STRING string = "string"
 var INT string = "int"
 

@@ -6,6 +6,11 @@ import (
 	"github.com/swarajkumarsingh/turbo-deploy/constants"
 )
 
+var AWS_TOKEN string = os.Getenv("STAGE")
+var AWS_REGION string = os.Getenv("STAGE")
+var AWS_ACCESS_KEY string = os.Getenv("STAGE")
+var AWS_SECRET_ACCESS_KEY string = os.Getenv("STAGE")
+
 var ENV string = os.Getenv("STAGE")
 var VaultKey string = os.Getenv("VAULT_KEY")
 var SentryDSN string = os.Getenv("SENTRY_DSN")
