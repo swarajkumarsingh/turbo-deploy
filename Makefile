@@ -5,10 +5,10 @@ run:
 	docker compose up
 
 build:
-	docker build -t olx-clone . && docker run -p 8080:8080 olx-clone
+	docker build -t turbo-deploy . && docker run -p 8080:8080 turbo-deploy
 
 start:
-	docker run -p 8080:8080 olx-clone
+	docker run -p 8080:8080 turbo-deploy
 
 compose:
 	docker compose build && docker compose up

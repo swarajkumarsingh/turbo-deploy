@@ -1,7 +1,7 @@
 /*
 To do any of the things below, first import the package
 
-import "olx-clone/infra/db"
+import "turbo-deploy/infra/db"
 
 --------------------------------------------------------
 Run a query and map results to array of struct instances
@@ -85,20 +85,16 @@ var log = logger.Log
 func init() {
 	var err error
 	sqltrace.Register("postgres", &pq.Driver{}, sqltrace.WithServiceName(conf.ClientENV))
-	database, err := sqlxtrace.Open("postgres", "postgres://postgres:postgres@host.docker.internal:5432/olx_clone?sslmode=disable")
+	database, err := sqlxtrace.Open("postgres", DB_URL)
 	if err != nil {
 		log.Errorln(err)
 		panic(err)
 	}
 
 	err = database.Ping()
-	if err != nil {
+	if err != nil {	
 		log.Errorln("Error while pinging the DB:", err)
 		panic(err)
-	}
-
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	maxOpenConn := 50

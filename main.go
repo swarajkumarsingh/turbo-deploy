@@ -4,49 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
+	"github.com/swarajkumarsingh/turbo-deploy/controller/prometheus"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
 )
 
 var log = logger.Log
 var version string = "1.0"
-
-func prometheusHandler() gin.HandlerFunc {
-	h := promhttp.Handler()
-
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
-	}
-}
-
-var (
-	totalRequests = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "app_total_requests",
-			Help: "Total number of requests to my app",
-		},
-	)
-)
-
-var cpuTemp = prometheus.NewGauge(prometheus.GaugeOpts{
-	Name: "cpu_temperature_celsius_a",
-	Help: "Current temperature of the CPU.",
-})
-
-func CustomMetricsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cpuTemp.Set(float64(100))
-		totalRequests.Inc()
-		c.Next()
-	}
-}
-
-func init() {
-	prometheus.MustRegister(cpuTemp)
-	prometheus.MustRegister(totalRequests)
-}
 
 func enableCORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -69,7 +32,7 @@ func main() {
 
 	// custom middleware
 	r.Use(enableCORS())
-	r.Use(CustomMetricsMiddleware())
+	r.Use(prometheus.CustomMetricsMiddleware())
 
 	// run migrations
 	MigrateDB()
@@ -80,7 +43,7 @@ func main() {
 			"message": "health ok",
 		})
 	})
-	r.GET("/metrics", prometheusHandler())
+	r.GET("/metrics", prometheus.PrometheusHandler())
 
 	log.Printf("Server Started, version: %s", version)
 	http.ListenAndServe(":8080", r)

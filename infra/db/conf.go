@@ -27,12 +27,13 @@ type DBConfigStruct struct {
 }
 
 var ENV string = os.Getenv("STAGE")
+var DB_URL string = os.Getenv("DB_URL")
 
 const (
 	ReadOnly = "READ_ONLY"
 )
 
-func getDBConnectionString(access string) string {
+func getDBConnectionString() string {
 	dbConfig := &DBConfigStruct{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
@@ -51,6 +52,6 @@ func getDBConnectionString(access string) string {
 
 var DBConfig = map[string]string{
 	"driver":                "postgres",
-	"conn_string":           getDBConnectionString(""),
-	"read_only_conn_string": getDBConnectionString(ReadOnly),
+	"conn_string":           getDBConnectionString(),
+	"read_only_conn_string": getDBConnectionString(),
 }
