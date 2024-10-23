@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/swarajkumarsingh/turbo-deploy/controller/prometheus"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
+	projectRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/project"
+	userRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/user"
 )
 
 var log = logger.Log
@@ -44,6 +46,9 @@ func main() {
 		})
 	})
 	r.GET("/metrics", prometheus.PrometheusHandler())
+	
+	userRoutes.AddRoutes(r)
+	projectRoutes.AddRoutes(r)
 
 	log.Printf("Server Started, version: %s", version)
 	http.ListenAndServe(":8080", r)

@@ -2,6 +2,6 @@ global:
   scrape_interval: 15s
 scrape_configs:
   - job_name: "golang-server"
-    scrape_interval: 25s
+    scrape_interval: 999s
     static_configs:
       - targets: ["golang:8080"]
