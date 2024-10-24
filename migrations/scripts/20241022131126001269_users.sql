@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
 	password VARCHAR(200) NOT NULL,
 	phone VARCHAR(12) NOT NULL,
 	location TEXT,
+	address TEXT,
     is_active BOOLEAN DEFAULT TRUE NOT NULL,
     is_deleted BOOLEAN DEFAULT TRUE NOT NULL,
     primary_goal primary_goal_enum DEFAULT 'test' NOT NULL,
