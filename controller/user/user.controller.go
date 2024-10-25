@@ -62,9 +62,19 @@ func CreateUser(ctx *gin.Context) {
 // get user
 func GetUser(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	uid, valid := getUserIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	user, err := model.GetUserById(context.TODO(), uid)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusNotFound, messages.UserNotFoundMessage)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,
+		"user":  user,
 	})
 }
 

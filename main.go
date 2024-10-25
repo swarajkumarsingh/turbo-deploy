@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/swarajkumarsingh/turbo-deploy/controller/prometheus"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
+	deploymentRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/deployment"
+	deploymentLogRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/deployment_log"
 	projectRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/project"
 	userRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/user"
 )
@@ -49,6 +51,8 @@ func main() {
 	
 	userRoutes.AddRoutes(r)
 	projectRoutes.AddRoutes(r)
+	deploymentRoutes.AddRoutes(r)
+	deploymentLogRoutes.AddRoutes(r)
 
 	log.Printf("Server Started, version: %s", version)
 	http.ListenAndServe(":8080", r)

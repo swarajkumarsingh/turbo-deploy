@@ -9,13 +9,37 @@ import (
 	"github.com/swarajkumarsingh/turbo-deploy/conf"
 	"github.com/swarajkumarsingh/turbo-deploy/constants"
 	"github.com/swarajkumarsingh/turbo-deploy/constants/messages"
+	"github.com/swarajkumarsingh/turbo-deploy/functions/general"
 	validators "github.com/swarajkumarsingh/turbo-deploy/functions/validator"
 	model "github.com/swarajkumarsingh/turbo-deploy/models/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
+func getUserIdFromParam(ctx *gin.Context) (string, bool) {
+	username := ctx.Param("uid")
+	valid := general.ValidUserName(username)	
+
+	if !valid {
+		return "", false
+	}
+
+	return username, true
+}
+
 func getCreateUserBody(ctx *gin.Context) (model.UserBody, error) {
 	var body model.UserBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		return body, errors.New(messages.InvalidBodyMessage)
+	}
+
+	if err := validators.ValidateStruct(body); err != nil {
+		return body, err
+	}
+	return body, nil
+}
+
+func getUpdateUserBody(ctx *gin.Context) (model.UserUpdateBody, error) {
+	var body model.UserUpdateBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		return body, errors.New(messages.InvalidBodyMessage)
 	}
