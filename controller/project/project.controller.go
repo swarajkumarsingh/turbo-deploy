@@ -1,10 +1,14 @@
 package project
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swarajkumarsingh/turbo-deploy/constants/messages"
 	"github.com/swarajkumarsingh/turbo-deploy/errorHandler"
+	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
+	model "github.com/swarajkumarsingh/turbo-deploy/models/project"
 )
 
 // create project
@@ -20,8 +24,19 @@ func CreateProject(ctx *gin.Context) {
 func GetProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 
+	pid, valid := getProjectIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	user, err := model.GetProjectById(context.TODO(), pid)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusNotFound, messages.UserNotFoundMessage)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,
+		"user":  user,
 	})
 }
 

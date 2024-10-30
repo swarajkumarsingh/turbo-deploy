@@ -17,8 +17,8 @@ type User struct {
 	PrimaryGoal string `json:"primary_goal" db:"primary_goal"`
 	UserRole    string `json:"user_role" db:"user_role"`
 	PlanType    string `json:"plan_type" db:"plan_type"`
-	Created_at  string `json:"created_on" db:"created_at"`
-	Updated_at  string `json:"updated_at" db:"updated_at"`
+	CreatedAt   string `json:"created_on" db:"created_at"`
+	UpdatedAt   string `json:"updated_at" db:"updated_at"`
 }
 
 type UserBody struct {

@@ -119,6 +119,8 @@ func DeleteUser(ctx *gin.Context) {
 		logger.WithRequest(ctx).Panicln(err)
 	}
 
+	// TODO: Delete all projects with user id
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,
 		"message": "User deleted successfully",
