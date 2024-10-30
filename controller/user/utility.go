@@ -16,14 +16,18 @@ import (
 )
 
 func getUserIdFromParam(ctx *gin.Context) (string, bool) {
-	username := ctx.Param("uid")
-	valid := general.ValidUserName(username)	
+	uid := ctx.Param("uid")
+	valid := general.ValidUserName(uid)	
 
 	if !valid {
 		return "", false
 	}
+	_, err := general.IsInt(uid)
+	if err != nil {
+		return "", false
+	}
 
-	return username, true
+	return uid, true
 }
 
 func getCreateUserBody(ctx *gin.Context) (model.UserBody, error) {

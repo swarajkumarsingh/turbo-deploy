@@ -6,7 +6,7 @@ const (
 	UserAlreadyExistsMessage         = "user Already exists"
 	SellerAlreadyExistsMessage       = "seller Already exists"
 	InvalidUsernameMessage           = "invalid username"
-	InvalidUserIdMessage             = "invalid userId"
+	InvalidUserIdMessage             = "invalid user id"
 	InvalidUsernameOrPasswordMessage = "invalid username or password"
 	InvalidBodyMessage               = "invalid body"
 	InvalidOTPMessage                = "invalid otp"

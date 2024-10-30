@@ -18,6 +18,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -54,6 +55,22 @@ func DeprecatedValidateStruct(s interface{}) error {
 
 	return err
 }
+
+func IsInt(uidParam string) (int, error) {
+    // Try to convert the uidParam to an integer
+    uid, err := strconv.Atoi(uidParam)
+    if err != nil {
+        return 0, errors.New("uid must be a valid integer")
+    }
+
+    // Check if the uid is positive
+    if uid <= 0 {
+        return 0, errors.New("uid must be a positive integer")
+    }
+
+    return uid, nil
+}
+
 
 // ValidUserName return bool if the username if valid, to prevent SQL injection
 func ValidUserName(username string) bool {

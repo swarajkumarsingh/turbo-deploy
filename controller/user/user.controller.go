@@ -82,8 +82,23 @@ func GetUser(ctx *gin.Context) {
 func UpdateUser(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 
+	uid, valid := getUserIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	body, err := getUpdateUserBody(ctx)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidBodyMessage)
+	}
+
+	if err = model.UpdateUser(context.TODO(), uid, body); err != nil {
+		logger.WithRequest(ctx).Panicln(err)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":   false,
+		"message": "User updated successfully",
 	})
 }
 

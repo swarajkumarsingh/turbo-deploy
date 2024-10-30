@@ -36,6 +36,21 @@ func InsertUser(body UserBody, password string) error {
 	return nil
 }
 
+func UpdateUser(context context.Context, uid string, body UserUpdateBody) error {
+	query := "UPDATE users SET username = $2, firstname = $3, lastname = $4, address = $5, experience = $6, primary_goal = $7, user_role = $8, plan_type = $9 WHERE id = $1"
+	res, err := database.ExecContext(context, query, uid, body.Username, body.FirstName, body.LastName, body.Address, body.Experience, body.PrimaryGoal, body.UserRole, body.PlanType)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil || rowsAffected == 0 {
+		return errors.New("could not update user")
+	}
+
+	return nil
+}
+
 func GetUserByUsername(context context.Context, username string) (User, error) {
 	var userModel User
 	validUserName := general.ValidUserName(username)
