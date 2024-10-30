@@ -26,6 +26,20 @@ func UserAlreadyExistsWithUsername(username string) bool {
 	return exists
 }
 
+func UserAlreadyExistsWithEmail(email string) bool {
+	var exists bool
+	query := "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
+
+	err := database.QueryRow(query, email).Scan(&exists)
+
+	if err != nil {
+		logger.Log.Println(err)
+		return false
+	}
+
+	return exists
+}
+
 func InsertUser(body UserBody, password string) error {
 	query := `INSERT INTO users(username, firstname, lastname, email, password, phone, address) VALUES($1, $2, $3, $4, $5, $6, $7)`
 	data, err := database.Exec(query, body.Username, body.FirstName, body.LastName, body.Email, password, body.Phone, body.Address)
@@ -36,7 +50,7 @@ func InsertUser(body UserBody, password string) error {
 	return nil
 }
 
-func UpdateUser(context context.Context, uid string, body UserUpdateBody) error {
+func UpdateUser(context context.Context, uid int, body UserUpdateBody) error {
 	query := "UPDATE users SET username = $2, firstname = $3, lastname = $4, address = $5, experience = $6, primary_goal = $7, user_role = $8, plan_type = $9 WHERE id = $1"
 	res, err := database.ExecContext(context, query, uid, body.Username, body.FirstName, body.LastName, body.Address, body.Experience, body.PrimaryGoal, body.UserRole, body.PlanType)
 	if err != nil {
@@ -51,9 +65,28 @@ func UpdateUser(context context.Context, uid string, body UserUpdateBody) error 
 	return nil
 }
 
+func DeleteUser(ctx context.Context, uid int) error {
+	query := "UPDATE users SET is_active = FALSE, is_deleted = TRUE WHERE id = $1"
+
+	result, err := database.ExecContext(ctx, query, uid)
+	if err != nil {
+		return errors.New("user not found or already deleted")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to fetch affected rows: %w", err)
+	}
+	if rowsAffected == 0 {
+		return errors.New("user not found or already deleted")
+	}
+
+	return nil
+}
+
 func GetUserByUsername(context context.Context, username string) (User, error) {
 	var userModel User
-	validUserName := general.ValidUserName(username)
+	validUserName := general.SQLInjectionValidation(username)
 	if !validUserName {
 		return userModel, errors.New("invalid username")
 	}
@@ -66,13 +99,8 @@ func GetUserByUsername(context context.Context, username string) (User, error) {
 	return userModel, err
 }
 
-func GetUserById(context context.Context, uid string) (User, error) {
+func GetUserById(context context.Context, uid int) (User, error) {
 	var userModel User
-	validUserName := general.ValidUserName(uid)
-	if !validUserName {
-		return userModel, errors.New("invalid username")
-	}
-
 	query := "SELECT * FROM users WHERE id = $1"
 	err := database.GetContext(context, &userModel, query, uid)
 	if err == nil {
@@ -83,7 +111,7 @@ func GetUserById(context context.Context, uid string) (User, error) {
 
 func GetUserIdByUsername(context context.Context, username string) (int, error) {
 	var userId int
-	validUserName := general.ValidUserName(username)
+	validUserName := general.SQLInjectionValidation(username)
 	if !validUserName {
 		return 0, errors.New("invalid username")
 	}

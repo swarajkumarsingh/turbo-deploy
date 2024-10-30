@@ -57,26 +57,25 @@ func DeprecatedValidateStruct(s interface{}) error {
 }
 
 func IsInt(uidParam string) (int, error) {
-    // Try to convert the uidParam to an integer
-    uid, err := strconv.Atoi(uidParam)
-    if err != nil {
-        return 0, errors.New("uid must be a valid integer")
-    }
+	// Try to convert the uidParam to an integer
+	uid, err := strconv.Atoi(uidParam)
+	if err != nil {
+		return 0, errors.New("uid must be a valid integer")
+	}
 
-    // Check if the uid is positive
-    if uid <= 0 {
-        return 0, errors.New("uid must be a positive integer")
-    }
+	// Check if the uid is positive
+	if uid <= 0 {
+		return 0, errors.New("uid must be a positive integer")
+	}
 
-    return uid, nil
+	return uid, nil
 }
 
-
-// ValidUserName return bool if the username if valid, to prevent SQL injection
-func ValidUserName(username string) bool {
+// SQLInjectionValidation return bool if the username if valid, to prevent SQL injection
+func SQLInjectionValidation(val string) bool {
 	list := [4]string{"'", "--", "void", "null"}
 	for _, v := range list {
-		if strings.Contains(username, v) {
+		if strings.Contains(val, v) {
 			return false
 		}
 	}

@@ -15,16 +15,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func getUserIdFromParam(ctx *gin.Context) (string, bool) {
-	uid := ctx.Param("uid")
-	valid := general.ValidUserName(uid)	
+func getUserIdFromParam(ctx *gin.Context) (int, bool) {
+	userId := ctx.Param("uid")
+	valid := general.SQLInjectionValidation(userId)
 
 	if !valid {
-		return "", false
+		return 0, false
 	}
-	_, err := general.IsInt(uid)
+	uid, err := general.IsInt(userId)
 	if err != nil {
-		return "", false
+		return 0, false
 	}
 
 	return uid, true

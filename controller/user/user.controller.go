@@ -23,7 +23,11 @@ func CreateUser(ctx *gin.Context) {
 	}
 
 	if model.UserAlreadyExistsWithUsername(body.Username) {
-		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.UserAlreadyExistsMessage)
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.UserAlreadyExistsMessageWithUsername)
+	}
+
+	if model.UserAlreadyExistsWithEmail(body.Email) {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.UserAlreadyExistsMessageWithEmail)
 	}
 
 	hashedPassword, err := hashPassword(body.Password)
@@ -106,7 +110,17 @@ func UpdateUser(ctx *gin.Context) {
 func DeleteUser(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 
+	uid, valid := getUserIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	if err := model.DeleteUser(context.TODO(), uid); err != nil {
+		logger.WithRequest(ctx).Panicln(err)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,
+		"message": "User deleted successfully",
 	})
 }
