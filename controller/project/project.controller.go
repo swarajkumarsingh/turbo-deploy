@@ -82,8 +82,37 @@ func GetProject(ctx *gin.Context) {
 func GetAllProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 
+	page := getCurrentPageValue(ctx)
+	itemsPerPage := getItemPerPageValue(ctx)
+	offset := getOffsetValue(page, itemsPerPage)
+
+	userId, valid := getUserIdFromReq(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	rows, err := model.GetProjectListPaginatedValue(userId, itemsPerPage, offset)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveUsersMessage)
+	}
+	defer rows.Close()
+
+	projects := make([]gin.H, 0)
+
+	for rows.Next() {
+		var id int
+		var name, subdomain, language string
+		if err := rows.Scan(&id, &name, &subdomain, &language); err != nil {
+			logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveUsersMessage)
+		}
+		projects = append(projects, gin.H{"id": id, "name": name, "subdomain": subdomain, "language": language})
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"users":       projects,
+		"page":        page,
+		"per_page":    itemsPerPage,
+		"total_pages": calculateTotalPages(page, itemsPerPage),
 	})
 }
 

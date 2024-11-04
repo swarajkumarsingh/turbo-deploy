@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
@@ -19,6 +20,11 @@ func GetProjectById(context context.Context, pid int) (Project, error) {
 		return model, nil
 	}
 	return model, err
+}
+
+func GetProjectListPaginatedValue(uid string, itemsPerPage, offset int) (*sql.Rows, error) {
+	query := `SELECT id, name, subdomain, language FROM projects WHERE user_id = $1 ORDER BY id LIMIT $2 OFFSET $3`
+	return database.Query(query, uid, itemsPerPage, offset)
 }
 
 func IsSubDomainAvailable(ctx context.Context, subDomain string) (bool, error) {

@@ -2,9 +2,11 @@ package userModel
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
+	"github.com/swarajkumarsingh/turbo-deploy/constants/messages"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/general"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
 	"github.com/swarajkumarsingh/turbo-deploy/infra/db"
@@ -48,6 +50,34 @@ func InsertUser(body UserBody, password string) error {
 		return err
 	}
 	return nil
+}
+
+func GetUserByUsernameWithUserId(context context.Context, userId string) (User, error) {
+	var userModel User
+	validUserName := general.SQLInjectionValidation(userId)
+	if !validUserName {
+		return userModel, errors.New("invalid username")
+	}
+
+	query := "SELECT * FROM users WHERE id = $1"
+	err := database.GetContext(context, &userModel, query, userId)
+	if err == nil {
+		return userModel, nil
+	}
+	return userModel, err
+}
+
+func CheckIfUsernameExistsWithId(context context.Context, userId string) (User, error) {
+	var user User
+	user, err := GetUserByUsernameWithUserId(context, userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return user, errors.New(messages.UserNotFoundMessage)
+		}
+		return user, err
+	}
+
+	return user, nil
 }
 
 func UpdateUser(context context.Context, uid int, body UserUpdateBody) error {

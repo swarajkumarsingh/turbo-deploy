@@ -5,14 +5,55 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swarajkumarsingh/turbo-deploy/constants"
 	"github.com/swarajkumarsingh/turbo-deploy/constants/messages"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/general"
+	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
 	validators "github.com/swarajkumarsingh/turbo-deploy/functions/validator"
 	model "github.com/swarajkumarsingh/turbo-deploy/models/project"
 )
+
+func getUserIdFromReq(ctx *gin.Context) (string, bool) {
+	uid, valid := ctx.Get(constants.UserIdMiddlewareConstant)
+	if !valid || uid == nil ||  fmt.Sprintf("%v", uid) == "" {
+		return "", false
+	}
+
+	return fmt.Sprintf("%v", uid), true
+}
+
+func getCurrentPageValue(ctx *gin.Context) int {
+	val, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	if err != nil {
+		logger.WithRequest(ctx).Errorln("error while extracting current page value: ", err)
+		return 1
+	}
+	return val
+}
+
+func getOffsetValue(page int, itemsPerPage int) int {
+	return (page - 1) * itemsPerPage
+}
+
+func getItemPerPageValue(ctx *gin.Context) int {
+	val, err := strconv.Atoi(ctx.DefaultQuery("per_page", strconv.Itoa(constants.DefaultPerPageSize)))
+	if err != nil {
+		logger.WithRequest(ctx).Errorln("error while extracting item per-page value: ", err)
+		return constants.DefaultPerPageSize
+	}
+	return val
+}
+
+func calculateTotalPages(page, itemsPerPage int) int {
+	if page <= 0 {
+		return 1
+	}
+	return (page + itemsPerPage - 1) / itemsPerPage
+}
 
 func IsValidGitHubURL(url string) bool {
 	regex := `^https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+$`
@@ -36,7 +77,6 @@ func ValidateGitHubURL(url string, resultChan chan<- bool) {
 		resultChan <- false
 	}
 }
-
 
 func IsAccessibleGitHubRepo(url string) (bool, error) {
 	client := &http.Client{Timeout: 4 * time.Second}
