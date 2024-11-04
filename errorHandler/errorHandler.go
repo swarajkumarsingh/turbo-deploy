@@ -27,7 +27,7 @@ func stringToStruct(str string) (models.CustomError, error) {
 	return s, nil
 }
 
-func respondwithJSON(c *gin.Context, code int, response map[string]interface{}) {
+func respondWithJSON(c *gin.Context, code int, response map[string]interface{}) {
 	c.Set("Content-Type", "application/json")
 	c.Status(code)
 	c.JSON(code, response)
@@ -37,7 +37,7 @@ func respondwithJSON(c *gin.Context, code int, response map[string]interface{}) 
 func Recovery(c *gin.Context, httpStatusCode int) {
 	if r := recover(); r != nil {
 		msg := messages.SomethingWentWrongMessage
-		code := http.StatusConflict
+		code := http.StatusInternalServerError
 
 		rawStruct, ok := r.(string)
 		definedStruct, _ := stringToStruct(rawStruct)
@@ -79,12 +79,12 @@ func CustomError(c *gin.Context, httpStatusCode int, msg string) {
 		"error":   true,
 		"message": msg,
 	}
-	respondwithJSON(c, httpStatusCode, errJSON)
+	respondWithJSON(c, httpStatusCode, errJSON)
 }
 
 // CustomErrorJSON returns a JSON without reporting to sentry
 func CustomErrorJSON(c *gin.Context, httpStatusCode int, errJSON map[string]interface{}) {
-	respondwithJSON(c, httpStatusCode, errJSON)
+	respondWithJSON(c, httpStatusCode, errJSON)
 }
 
 func ReportToSentry(c *gin.Context, err error) {

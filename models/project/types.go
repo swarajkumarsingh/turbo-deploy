@@ -12,3 +12,14 @@ type Project struct {
 	IsDockerized  string `json:"is_dockerized" db:"is_dockerized"`
 	CreatedAt     string `json:"created_on" db:"created_at"`
 }
+
+type ProjectBody struct {
+	UserId        string `validate:"required" json:"user_id"`
+	Name          string `validate:"required" json:"name"`
+	SourceCodeUrl string `validate:"required" json:"source_code_url"`
+	SourceCode    string `validate:"required" json:"source_code"`
+	Subdomain     string `validate:"required" json:"subdomain"`
+	CustomDomain  string `validate:"required" json:"custom_domain"`
+	Language      string `validate:"required" json:"language"`
+	IsDockerized  string `validate:"required" json:"is_dockerized"`
+}

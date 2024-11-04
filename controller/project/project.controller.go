@@ -1,7 +1,6 @@
 package project
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,25 +10,64 @@ import (
 	model "github.com/swarajkumarsingh/turbo-deploy/models/project"
 )
 
-// create project
 func CreateProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	// Get request body
+	body, err := getCreateProjectBody(ctx)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidBodyMessage)
+	}
+
+	// Check sub-domain availability
+	available, err := model.IsSubDomainAvailable(reqCtx, body.Subdomain)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
+	}
+	if !available {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.SubDomainAlreadyExists)
+	}
+
+	// Validate GitHub URL format
+	if !IsValidGitHubURL(body.SourceCodeUrl) {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidSourceURLMessage)
+	}
+
+	// Asynchronous github repo validation
+	resultChan := make(chan bool)
+	go ValidateGitHubURL(body.SourceCodeUrl, resultChan)
+	valid := <-resultChan
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.GithubRepoNotFoundOrPrivate)
+	}
+
+	// Add to project table
+	subDomainAlreadyExists, err := model.CreateProject(reqCtx, body)
+	if subDomainAlreadyExists {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, err)
+	}
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":   false,
+		"message": "project created successfully",
 	})
 }
 
 // get project
 func GetProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
 
 	pid, valid := getProjectIdFromParam(ctx)
 	if !valid {
 		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
 	}
 
-	user, err := model.GetProjectById(context.TODO(), pid)
+	user, err := model.GetProjectById(reqCtx, pid)
 	if err != nil {
 		logger.WithRequest(ctx).Panicln(http.StatusNotFound, messages.UserNotFoundMessage)
 	}

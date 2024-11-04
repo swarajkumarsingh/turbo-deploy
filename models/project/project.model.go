@@ -2,7 +2,10 @@ package project
 
 import (
 	"context"
+	"errors"
+	"strings"
 
+	"github.com/swarajkumarsingh/turbo-deploy/constants/messages"
 	"github.com/swarajkumarsingh/turbo-deploy/infra/db"
 )
 
@@ -16,4 +19,26 @@ func GetProjectById(context context.Context, pid int) (Project, error) {
 		return model, nil
 	}
 	return model, err
+}
+
+func IsSubDomainAvailable(ctx context.Context, subDomain string) (bool, error) {
+	query := `SELECT COUNT(*) FROM projects WHERE subdomain = $1`
+	var count int
+	err := database.QueryRowContext(ctx, query, subDomain).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count == 0, nil
+}
+
+func CreateProject(context context.Context, body ProjectBody) (bool, error) {
+	query := `INSERT INTO projects(user_id, name, source_code_url, subdomain, custom_domain, source_code, language, is_dockerized) VALUES($1, $2, $3, $4, $5, $6, $7, $8)`
+	_, err := database.Exec(query, body.UserId, body.Name, body.SourceCodeUrl, body.Subdomain, body.Subdomain, body.SourceCode, body.Language, body.IsDockerized)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			return true, errors.New(messages.SubDomainAlreadyExists)
+		}
+		return false, err
+	}
+	return false, nil
 }

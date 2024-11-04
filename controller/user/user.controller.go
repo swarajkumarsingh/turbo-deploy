@@ -32,11 +32,11 @@ func CreateUser(ctx *gin.Context) {
 
 	hashedPassword, err := hashPassword(body.Password)
 	if err != nil {
-		logger.WithRequest(ctx).Panicln(err)
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
 	}
 
 	if err = model.InsertUser(body, hashedPassword); err != nil {
-		logger.WithRequest(ctx).Panicln(err)
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
 	}
 
 	id, err := model.GetUserIdByUsername(context.TODO(), body.Username)
@@ -50,10 +50,6 @@ func CreateUser(ctx *gin.Context) {
 	token, err := generateJwtToken(strconv.Itoa(id))
 	if err != nil {
 		logger.WithRequest(ctx).Panicln("unable to login, try again later")
-	}
-
-	if err != nil {
-		logger.WithRequest(ctx).Panicln(err)
 	}
 
 	ctx.JSON(http.StatusCreated, gin.H{

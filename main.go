@@ -37,6 +37,7 @@ func main() {
 	// custom middleware
 	r.Use(enableCORS())
 	r.Use(prometheus.CustomMetricsMiddleware())
+	// r.Use(authentication.RateLimit())
 
 	// run migrations
 	MigrateDB()
@@ -48,7 +49,7 @@ func main() {
 		})
 	})
 	r.GET("/metrics", prometheus.PrometheusHandler())
-	
+
 	userRoutes.AddRoutes(r)
 	projectRoutes.AddRoutes(r)
 	deploymentRoutes.AddRoutes(r)
