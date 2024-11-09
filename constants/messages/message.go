@@ -10,6 +10,7 @@ const (
 	InvalidUsernameMessage               = "invalid username"
 	GithubRepoNotFoundOrPrivate          = "repository not found or is private"
 	InvalidUserIdMessage                 = "invalid user id"
+	InvalidProjectIdMessage              = "invalid project id"
 	InvalidUsernameOrPasswordMessage     = "invalid username or password"
 	InvalidBodyMessage                   = "invalid body"
 	SubDomainAlreadyExists               = "sub domain already exists"

@@ -119,9 +119,40 @@ func GetAllProject(ctx *gin.Context) {
 // update project - projectName, customDomain
 func UpdateProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	pid, valid := getProjectIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	// get projectName and customDomain
+	body, err := getUpdateProjectBody(ctx)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, err)
+	}
+
+	// Check sub-domain availability
+	available, err := model.IsSubDomainAvailable(reqCtx, body.Subdomain)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
+	}
+	if !available {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.SubDomainAlreadyExists)
+	}
+
+	// update in project DB
+	subDomainAlreadyExists, err := model.UpdateProject(reqCtx, pid, body.Name, body.Subdomain)
+	if subDomainAlreadyExists {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, err)
+	}
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,
+		"message": "project updated successfully",
 	})
 }
 

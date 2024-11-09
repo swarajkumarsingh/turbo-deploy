@@ -23,3 +23,8 @@ type ProjectBody struct {
 	Language      string `validate:"required" json:"language"`
 	IsDockerized  string `validate:"required" json:"is_dockerized"`
 }
+
+type UpdateProjectBody struct {
+	Name      string `validate:"required" json:"name"`
+	Subdomain string `validate:"required" json:"subdomain"`
+}

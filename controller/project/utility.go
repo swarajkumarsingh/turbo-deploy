@@ -19,7 +19,7 @@ import (
 
 func getUserIdFromReq(ctx *gin.Context) (string, bool) {
 	uid, valid := ctx.Get(constants.UserIdMiddlewareConstant)
-	if !valid || uid == nil ||  fmt.Sprintf("%v", uid) == "" {
+	if !valid || uid == nil || fmt.Sprintf("%v", uid) == "" {
 		return "", false
 	}
 
@@ -97,7 +97,7 @@ func IsAccessibleGitHubRepo(url string) (bool, error) {
 }
 
 func getProjectIdFromParam(ctx *gin.Context) (int, bool) {
-	userId := ctx.Param("uid")
+	userId := ctx.Param("pid")
 	valid := general.SQLInjectionValidation(userId)
 
 	if !valid {
@@ -119,6 +119,27 @@ func getCreateProjectBody(ctx *gin.Context) (model.ProjectBody, error) {
 
 	if err := validators.ValidateStruct(body); err != nil {
 		return body, err
+	}
+
+	if !general.IsAlphanumeric(body.Name) || !general.IsAlphanumeric(body.Subdomain) {
+		return body, errors.New(messages.InvalidBodyMessage)
+	}
+
+	return body, nil
+}
+
+func getUpdateProjectBody(ctx *gin.Context) (model.UpdateProjectBody, error) {
+	var body model.UpdateProjectBody
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		return body, errors.New(messages.InvalidBodyMessage)
+	}
+
+	if err := validators.ValidateStruct(body); err != nil {
+		return body, err
+	}
+
+	if !general.IsAlphanumeric(body.Name) || !general.IsAlphanumeric(body.Subdomain) {
+		return body, errors.New(messages.InvalidBodyMessage)
 	}
 	return body, nil
 }

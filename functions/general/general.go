@@ -56,6 +56,11 @@ func DeprecatedValidateStruct(s interface{}) error {
 	return err
 }
 
+func IsAlphanumeric(input string) bool {
+	var validString = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	return validString.MatchString(input)
+}
+
 func IsInt(uidParam string) (int, error) {
 	// Try to convert the uidParam to an integer
 	uid, err := strconv.Atoi(uidParam)

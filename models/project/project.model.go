@@ -48,3 +48,15 @@ func CreateProject(context context.Context, body ProjectBody) (bool, error) {
 	}
 	return false, nil
 }
+
+func UpdateProject(ctx context.Context, id int, name, subDomain string) (bool, error) {
+	query := `UPDATE projects SET name = $1, subdomain = $2 WHERE id = $3;`
+	_, err := database.ExecContext(ctx, query, name, subDomain, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			return true, errors.New(messages.SubDomainAlreadyExists)
+		}
+		return false, err
+	}
+	return false, nil
+}
