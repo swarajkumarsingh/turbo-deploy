@@ -114,6 +114,25 @@ func DeleteUser(ctx context.Context, uid int) error {
 	return nil
 }
 
+func DeleteProjectFromUser(ctx context.Context, uid int) error {
+	query := "DELETE from projects WHERE user_id = $1"
+
+	result, err := database.ExecContext(ctx, query, uid)
+	if err != nil {
+		return errors.New("user not found or already deleted")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to fetch affected rows: %w", err)
+	}
+	if rowsAffected == 0 {
+		return errors.New("user not found or already deleted")
+	}
+
+	return nil
+}
+
 func GetUserByUsername(context context.Context, username string) (User, error) {
 	var userModel User
 	validUserName := general.SQLInjectionValidation(username)

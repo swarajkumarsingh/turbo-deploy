@@ -92,14 +92,14 @@ func init() {
 	}
 
 	err = database.Ping()
-	if err != nil {	
+	if err != nil {
 		log.Errorln("Error while pinging the DB:", err)
 		panic(err)
 	}
 
 	maxOpenConn := 50
 	ENV_PROD := "prod"
-	ENV := "dev" 
+	ENV := "dev"
 	if ENV == ENV_PROD {
 		maxOpenConn = 800
 	}

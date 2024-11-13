@@ -116,6 +116,9 @@ func DeleteUser(ctx *gin.Context) {
 	}
 
 	// TODO: Delete all projects with user id
+	if err := model.DeleteProjectFromUser(context.TODO(), uid); err != nil {
+		logger.WithRequest(ctx).Panicln(err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,

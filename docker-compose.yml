@@ -6,13 +6,13 @@ services:
       - 6379:6379
     restart: on-failure
     volumes:
-      - .cache:/data
+      - redis-data:/data
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     ports:
-      - 9090:9090 
+      - 9090:9090
     restart: on-failure
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
@@ -26,39 +26,36 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
 
+  postgres:
+    container_name: postgres_container
+    image: postgres:13.5
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: turbo_deploy
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
-    hostname: localhost
     environment:
       PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-      GUNICORN_ACCESS_LOGFILE: "/dev/null"
     ports:
       - "3030:80"
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
-
-  # postgres:
-  #   container_name: postgres_container
-  #   build: ./postgres/.
-  #   ports:
-  #     - 5432:5432
-  #   volumes:
-  #     - ./postgres-data:/var/lib/postgresql/data
-  #   environment:
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: postgres
-  #     POSTGRES_DB: turbo_deploy
-  #     PGDATA: /var/lib/postgresql/data/pgdata
-  #   healthcheck:
-  #     test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+    depends_on:
+      - postgres
 
   golang:
     container_name: golang_container
@@ -85,14 +82,13 @@ services:
     depends_on:
       - redis
       - grafana
-      # - postgres
+      - postgres
       - prometheus
-    # For Dockerfile.Local only
     volumes:
       - ./:/app
 
 volumes:
-  redis: {}
+  redis-data: {}
   grafana-storage: {}
   db:
     driver: local
