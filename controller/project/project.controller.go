@@ -160,6 +160,11 @@ func UpdateProject(ctx *gin.Context) {
 func DeleteProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 
+
+	// get project id
+
+	// delete project & deployment & deployment_logs
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"error": false,
 	})

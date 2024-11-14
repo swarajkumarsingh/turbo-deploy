@@ -96,11 +96,11 @@ func UpdateUser(context context.Context, uid int, body UserUpdateBody) error {
 }
 
 func DeleteUser(ctx context.Context, uid int) error {
-	query := "UPDATE users SET is_active = FALSE, is_deleted = TRUE WHERE id = $1"
+	query := "DELETE FROM users WHERE id = $1"
 
 	result, err := database.ExecContext(ctx, query, uid)
 	if err != nil {
-		return errors.New("user not found or already deleted")
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -108,7 +108,7 @@ func DeleteUser(ctx context.Context, uid int) error {
 		return fmt.Errorf("failed to fetch affected rows: %w", err)
 	}
 	if rowsAffected == 0 {
-		return errors.New("user not found or already deleted")
+		return errors.New("user not found")
 	}
 
 	return nil

@@ -1,8 +1,7 @@
 SCRIPT_FOLDER_NAME = commands
 
 run:
-	docker compose build
-	docker compose up
+	docker compose up --build
 
 build:
 	docker build -t turbo-deploy . && docker run -p 8080:8080 turbo-deploy

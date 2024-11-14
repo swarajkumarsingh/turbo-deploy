@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS users (
 	location TEXT,
 	address TEXT,
     is_active BOOLEAN DEFAULT TRUE NOT NULL,
-    is_deleted BOOLEAN DEFAULT FALSE NOT NULL,
     primary_goal primary_goal_enum DEFAULT 'test' NOT NULL,
     experience INT DEFAULT 0,
     user_role user_role_enum DEFAULT 'user' NOT NULL,
