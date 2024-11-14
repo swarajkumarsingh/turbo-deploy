@@ -115,19 +115,6 @@ func DeleteUser(ctx *gin.Context) {
 		logger.WithRequest(ctx).Panicln(err)
 	}
 
-	// TODO: Delete deployment & deployment_logs associated with user and project
-	if err := model.DeleteProjectFromUser(context.TODO(), uid); err != nil {
-		logger.WithRequest(ctx).Panicln(err)
-	}
-
-	if err := model.DeleteProjectFromUser(context.TODO(), uid); err != nil {
-		logger.WithRequest(ctx).Panicln(err)
-	}
-
-	if err := model.DeleteProjectFromUser(context.TODO(), uid); err != nil {
-		logger.WithRequest(ctx).Panicln(err)
-	}
-
 	ctx.JSON(http.StatusOK, gin.H{
 		"error":   false,
 		"message": "User deleted successfully",
