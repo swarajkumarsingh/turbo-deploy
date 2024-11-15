@@ -108,7 +108,7 @@ func DeleteUser(ctx context.Context, uid int) error {
 		return fmt.Errorf("failed to fetch affected rows: %w", err)
 	}
 	if rowsAffected == 0 {
-		return errors.New("user not found")
+		return errors.New("user not found or user already deleted")
 	}
 
 	return nil
