@@ -14,4 +14,5 @@ func AddRoutes(router *gin.Engine) {
 	r.GET("/projects", authentication.AuthorizeUser, project.GetAllProject)
 	r.PATCH("/project/:pid", project.UpdateProject)
 	r.DELETE("/project/:pid", project.DeleteProject)
+	r.DELETE("/project/", authentication.AuthorizeUser, project.DeleteAllProject)
 }

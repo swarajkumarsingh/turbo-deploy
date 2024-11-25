@@ -63,7 +63,6 @@ for _, student := range students{
 package db
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -85,7 +84,6 @@ var log = logger.Log
 // init initiates a datadog instance.
 func init() {
 	var err error
-	fmt.Println("hi", DB_URL)
 	sqltrace.Register("postgres", &pq.Driver{}, sqltrace.WithServiceName(conf.ClientENV))
 	database, err := sqlxtrace.Open("postgres", DB_URL)
 	if err != nil {

@@ -13,6 +13,7 @@ type User struct {
 	IsActive    string `json:"is_active" db:"is_active"`
 	IsDeleted   string `json:"is_deleted" db:"is_deleted"`
 	Address     string `json:"address" db:"address"`
+	Location    string `json:"location" db:"location"`
 	Experience  string `json:"experience" db:"experience"`
 	PrimaryGoal string `json:"primary_goal" db:"primary_goal"`
 	UserRole    string `json:"user_role" db:"user_role"`

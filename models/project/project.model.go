@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/swarajkumarsingh/turbo-deploy/constants/messages"
@@ -35,6 +36,44 @@ func IsSubDomainAvailable(ctx context.Context, subDomain string) (bool, error) {
 		return false, err
 	}
 	return count == 0, nil
+}
+
+func DeleteAllProjectFromUser(ctx context.Context, uid string) error {
+	query := "DELETE from projects WHERE user_id = $1"
+
+	result, err := database.ExecContext(ctx, query, uid)
+	if err != nil {
+		return errors.New("projects not found or already deleted")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to fetch affected rows: %w", err)
+	}
+	if rowsAffected == 0 {
+		return errors.New("projects not found or already deleted")
+	}
+
+	return nil
+}
+
+func DeleteProjectFromUser(ctx context.Context, pid int) error {
+	query := "DELETE from projects WHERE id = $1"
+
+	result, err := database.ExecContext(ctx, query, pid)
+	if err != nil {
+		return errors.New("project not found or already deleted")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to fetch affected rows: %w", err)
+	}
+	if rowsAffected == 0 {
+		return errors.New("project not found or already deleted")
+	}
+
+	return nil
 }
 
 func CreateProject(context context.Context, body ProjectBody) (bool, error) {

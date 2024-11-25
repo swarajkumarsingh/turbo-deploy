@@ -151,30 +151,39 @@ func UpdateProject(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":   false,
 		"message": "project updated successfully",
 	})
 }
 
 // delete project
-func DeleteProject(ctx *gin.Context) {
+func DeleteAllProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
-
+	reqCtx := ctx.Request.Context()
 
 	// get project id
+	uid, valid := getUserIdFromReq(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
 
-	// delete project & deployment & deployment_logs
+	// delete project
+	if err := model.DeleteAllProjectFromUser(reqCtx, uid); err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":   false,
+		"message": "all projects deleted successfully",
 	})
 }
 
 // delete all user project
-func DeleteAllProject(ctx *gin.Context) {
+func DeleteProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":   false,
+		"message": "project deleted successfully",
 	})
 }
