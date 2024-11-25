@@ -181,6 +181,18 @@ func DeleteAllProject(ctx *gin.Context) {
 // delete all user project
 func DeleteProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	// get project id
+	pid, valid := getProjectIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	// delete project
+	if err := model.DeleteProjectFromUser(reqCtx, pid); err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"error":   false,
