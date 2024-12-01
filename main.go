@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swarajkumarsingh/turbo-deploy/authentication"
 	"github.com/swarajkumarsingh/turbo-deploy/controller/prometheus"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
 	deploymentRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/deployment"
@@ -37,7 +38,7 @@ func main() {
 	// custom middleware
 	r.Use(enableCORS())
 	r.Use(prometheus.CustomMetricsMiddleware())
-	// r.Use(authentication.RateLimit())
+	r.Use(authentication.RateLimit())
 
 	// run migrations
 	MigrateDB()
