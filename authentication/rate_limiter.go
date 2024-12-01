@@ -9,13 +9,12 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// RateLimiter provides a more flexible and accurate rate limiting middleware
+// RateLimiter - rate limiting middleware
 func RateLimit() gin.HandlerFunc {
 	// Create a limiter that allows 100 requests per minute
 	// This translates to approximately 1.67 requests per second
-	limiter := rate.NewLimiter(rate.Every(time.Minute/100), 10)
-	
-	// Use a mutex to ensure thread-safety
+	limiter := rate.NewLimiter(rate.Every(time.Minute/100000), 10)
+
 	var mu sync.Mutex
 
 	return func(c *gin.Context) {

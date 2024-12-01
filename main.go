@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swarajkumarsingh/turbo-deploy/authentication"
@@ -33,29 +38,70 @@ func enableCORS() gin.HandlerFunc {
 }
 
 func main() {
+	// Set Gin to production mode
+	gin.SetMode(gin.ReleaseMode)
+
+	// Create router
 	r := gin.Default()
 
-	// custom middleware
+	// Custom middleware
 	r.Use(enableCORS())
 	r.Use(prometheus.CustomMetricsMiddleware())
 	r.Use(authentication.RateLimit())
 
-	// run migrations
+	// Run migrations
 	MigrateDB()
 
+	// Health check route
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"error":   false,
 			"message": "health ok",
 		})
 	})
+
+	// Version check
+	r.GET("/version", func(c *gin.Context) {
+		c.JSON(200, gin.H{"version": version})
+	})
+
+	// Metrics route
 	r.GET("/metrics", prometheus.PrometheusHandler())
 
+	// Add routes
 	userRoutes.AddRoutes(r)
 	projectRoutes.AddRoutes(r)
 	deploymentRoutes.AddRoutes(r)
 	deploymentLogRoutes.AddRoutes(r)
 
-	log.Printf("Server Started, version: %s", version)
-	http.ListenAndServe(":8080", r)
+	// Create server
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Printf("Server Started, version: %s", version)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Panicf("Server failed to start: %v", err)
+		}
+	}()
+
+	<-done
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Panicf("Server shutdown failed: %v", err)
+	}
+
+	log.Println("Server gracefully stopped")
 }
