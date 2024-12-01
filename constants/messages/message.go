@@ -11,6 +11,7 @@ const (
 	GithubRepoNotFoundOrPrivate          = "repository not found or is private"
 	InvalidUserIdMessage                 = "invalid user id"
 	InvalidProjectIdMessage              = "invalid project id"
+	InvalidDeploymentIdMessage           = "invalid deployment id"
 	InvalidUsernameOrPasswordMessage     = "invalid username or password"
 	InvalidBodyMessage                   = "invalid body"
 	SubDomainAlreadyExists               = "sub domain already exists"
@@ -25,6 +26,7 @@ const (
 	FailedToRetrieveProductsMessage      = "failed to retrieve products"
 	FailedToSendEmailMessage             = "failed to send email"
 	FailedToRetrieveUsersMessage         = "failed to retrieve users"
+	FailedToRetrieveDeploymentLogsMessage         = "failed to deployment logs"
 	FailedToRetrieveFavoritesMessage     = "failed to retrieve favorites"
 	FailedToRetrieveSellersMessage       = "failed to retrieve sellers"
 )

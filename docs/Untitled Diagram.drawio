@@ -1,0 +1,46 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17">
+  <diagram name="Page-1" id="wlsFAU7uf4SZjOWlQkz7">
+    <mxGraphModel dx="1909" dy="1129" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-1" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;&lt;b&gt;Turbo Deploy&lt;/b&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="750" y="80" width="185" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-2" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+          <mxGeometry x="100" y="230" width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-3" value="&lt;b&gt;User&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;id&lt;/div&gt;&lt;div&gt;firstName&lt;/div&gt;&lt;div&gt;lastName&lt;/div&gt;&lt;div&gt;email&lt;/div&gt;&lt;div&gt;password&lt;/div&gt;&lt;div&gt;phone&lt;/div&gt;&lt;div&gt;email_verified&lt;/div&gt;&lt;div&gt;created_at&lt;/div&gt;&lt;div&gt;updated_at&lt;/div&gt;&lt;div&gt;plan_type&lt;/div&gt;&lt;div&gt;username&lt;/div&gt;&lt;div&gt;is_deleted&lt;/div&gt;&lt;div&gt;is_active&lt;/div&gt;&lt;div&gt;primary_goal - op&lt;/div&gt;&lt;div&gt;project_type&lt;/div&gt;&lt;div&gt;experiance&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="150" y="270" width="165" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-4" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+          <mxGeometry x="490" y="230" width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-5" value="&lt;b&gt;Project&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;id&lt;br&gt;&lt;/div&gt;&lt;div&gt;name&lt;/div&gt;&lt;div&gt;owner_id&lt;/div&gt;&lt;div&gt;girl_url&lt;/div&gt;&lt;div&gt;subdomain&lt;/div&gt;&lt;div&gt;custom_domain&lt;/div&gt;&lt;div&gt;lanuage&lt;/div&gt;&lt;div&gt;is_dockerized&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="540" y="270" width="165" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-8" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+          <mxGeometry x="920" y="230" width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-9" value="&lt;b&gt;Deployment&lt;/b&gt;&lt;br&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;id&lt;br&gt;&lt;/div&gt;&lt;div&gt;project_id&lt;/div&gt;&lt;div&gt;status: &#39;QUEUE&#39;|&#39;PROG&#39;|&#39;READY&#39;|&#39;FAIL&#39;&lt;/div&gt;&lt;div&gt;message&lt;/div&gt;&lt;div&gt;ready_url&lt;/div&gt;&lt;div&gt;&lt;div&gt;created_at&lt;/div&gt;&lt;div&gt;updated_at&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="920" y="270" width="270" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-10" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+          <mxGeometry x="1310" y="230" width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-11" value="&lt;b&gt;Deployment History&lt;/b&gt;&lt;br&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;id&lt;br&gt;&lt;/div&gt;&lt;div&gt;deployment_id&lt;/div&gt;&lt;div&gt;final_status&lt;/div&gt;&lt;div&gt;message&lt;/div&gt;&lt;div&gt;duration&lt;/div&gt;&lt;div&gt;ready_url&lt;/div&gt;&lt;div&gt;created_at&lt;/div&gt;&lt;div&gt;updated_at&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="1310" y="270" width="270" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-13" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" parent="1" vertex="1">
+          <mxGeometry x="1700" y="229" width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="WM28J7FXH_1OSJcM70Dx-14" value="&lt;b&gt;Deployment History&lt;/b&gt;&lt;br&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;id&lt;br&gt;&lt;/div&gt;&lt;div&gt;deployment_id&lt;/div&gt;&lt;div&gt;final_status&lt;/div&gt;&lt;div&gt;message&lt;/div&gt;&lt;div&gt;duration&lt;/div&gt;&lt;div&gt;ready_url&lt;/div&gt;&lt;div&gt;created_at&lt;/div&gt;&lt;div&gt;updated_at&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="1700" y="271" width="270" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="gcCvIvzQo7ntKApKDKn4-1" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;&lt;b style=&quot;font-size: 12px; text-align: center;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;URLs&lt;/font&gt;&lt;/b&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;/user/create&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;/user/&amp;lt;uid&amp;gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;/user/update&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px; background-color: initial;&quot;&gt;/user/delete&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;/project/create&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;/project/status&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;/project/update&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px; background-color: initial;&quot;&gt;/project/delete&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 12px; font-weight: 400; text-align: center;&quot;&gt;&lt;span style=&quot;font-size: 18px; background-color: initial;&quot;&gt;/project/deactive&lt;/span&gt;&lt;/div&gt;&lt;/h1&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="2750" y="60" width="230" height="460" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

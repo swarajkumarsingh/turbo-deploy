@@ -1,0 +1,8 @@
+## Create 3 components
+
+### Code Builder(ec2 launch)
+    - Launch a AWS ECS task(pre-configured)
+
+### Docker Build to compile and push to s3
+
+### Proxy from golang to s3
