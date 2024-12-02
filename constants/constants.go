@@ -1,5 +1,9 @@
 package constants
 
+import "os"
+
+var STAGE string = os.Getenv("STAGE")
+
 // Server ENV constants
 const (
 	ENV_PROD  = "prod"

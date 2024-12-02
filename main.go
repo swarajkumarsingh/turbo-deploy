@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/swarajkumarsingh/turbo-deploy/authentication"
+	"github.com/swarajkumarsingh/turbo-deploy/constants"
 	"github.com/swarajkumarsingh/turbo-deploy/controller/prometheus"
 	"github.com/swarajkumarsingh/turbo-deploy/functions/logger"
 	deploymentRoutes "github.com/swarajkumarsingh/turbo-deploy/routes/deployment"
@@ -38,10 +39,10 @@ func enableCORS() gin.HandlerFunc {
 }
 
 func main() {
-	// Set Gin to production mode
-	gin.SetMode(gin.ReleaseMode)
+	if constants.STAGE == constants.ENV_PROD {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	// Create router
 	r := gin.Default()
 
 	// Custom middleware
@@ -83,6 +84,7 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
+	// Implementation for Graceful Shutdown
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
