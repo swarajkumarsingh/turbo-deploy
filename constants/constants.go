@@ -8,6 +8,8 @@ const (
 	ENV_LOCAL = "local"
 )
 
+const DefaultRateLimiterPerMinute = 10
+
 const DefaultPerPageSize = 10
 const DefaultPageSize = 10
 const BcryptHashingCost = 8

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swarajkumarsingh/turbo-deploy/constants"
 	"golang.org/x/time/rate"
 )
 
@@ -13,10 +14,9 @@ import (
 func RateLimit() gin.HandlerFunc {
 	// Create a limiter that allows 100 requests per minute
 	// This translates to approximately 1.67 requests per second
-	limiter := rate.NewLimiter(rate.Every(time.Minute/100000), 10)
-
 	var mu sync.Mutex
-
+	limiter := rate.NewLimiter(rate.Every(time.Minute/constants.DefaultRateLimiterPerMinute), 10)
+	
 	return func(c *gin.Context) {
 		mu.Lock()
 		defer mu.Unlock()
