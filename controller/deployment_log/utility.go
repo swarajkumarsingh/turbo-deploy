@@ -10,7 +10,7 @@ import (
 )
 
 func getDeploymentIdFromReq(ctx *gin.Context) (int, bool) {
-	deploymentId := ctx.Param("deploymentId")
+	deploymentId := ctx.Param("id")
 	valid := general.SQLInjectionValidation(deploymentId)
 
 	if !valid {
@@ -25,30 +25,40 @@ func getDeploymentIdFromReq(ctx *gin.Context) (int, bool) {
 }
 
 func getCurrentPageValue(ctx *gin.Context) int {
-	val, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	if err != nil {
-		logger.WithRequest(ctx).Errorln("error while extracting current page value: ", err)
+	pageStr := ctx.DefaultQuery("page", strconv.Itoa(constants.DefaultPageSize))
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		logger.WithRequest(ctx).Errorln("Invalid page value; defaulting to 1:", err)
 		return 1
 	}
-	return val
-}
-
-func getOffsetValue(page int, itemsPerPage int) int {
-	return (page - 1) * itemsPerPage
+	return page
 }
 
 func getItemPerPageValue(ctx *gin.Context) int {
-	val, err := strconv.Atoi(ctx.DefaultQuery("per_page", strconv.Itoa(constants.DefaultPerPageSize)))
-	if err != nil {
-		logger.WithRequest(ctx).Errorln("error while extracting item per-page value: ", err)
+	perPageStr := ctx.DefaultQuery("per_page", strconv.Itoa(constants.DefaultPerPageSize))
+	perPage, err := strconv.Atoi(perPageStr)
+	if err != nil || perPage <= 0 || perPage > 100 {
+		logger.WithRequest(ctx).Errorln("Invalid per_page value; defaulting to:", constants.DefaultPerPageSize)
 		return constants.DefaultPerPageSize
 	}
-	return val
+	return perPage
 }
 
-func calculateTotalPages(page, itemsPerPage int) int {
-	if page <= 0 {
+func getOffsetValue(page int, itemsPerPage int) int {
+	if page < 1 {
+		page = 1
+	}
+	if itemsPerPage < 1 {
+		itemsPerPage = constants.DefaultPerPageSize
+	}
+	return (page - 1) * itemsPerPage
+}
+
+
+func calculateTotalPages(totalLogs, itemsPerPage int) int {
+	if itemsPerPage <= 0 {
 		return 1
 	}
-	return (page + itemsPerPage - 1) / itemsPerPage
+	totalPages := (totalLogs + itemsPerPage - 1) / itemsPerPage
+	return totalPages
 }

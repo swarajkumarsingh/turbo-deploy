@@ -20,11 +20,12 @@ func GetDeploymentLogs(ctx *gin.Context) {
 
 	deploymentId, valid := getDeploymentIdFromReq(ctx)
 	if !valid {
-		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidDeploymentIdMessage)
 	}
 
 	rows, err := model.GetDeploymentLogsPaginatedValue(deploymentId, itemsPerPage, offset)
 	if err != nil {
+		logger.WithRequest(ctx).Errorln(deploymentId, itemsPerPage, offset, err.Error())
 		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveDeploymentLogsMessage)
 	}
 	defer rows.Close()
@@ -33,17 +34,37 @@ func GetDeploymentLogs(ctx *gin.Context) {
 
 	for rows.Next() {
 		var id int
+		var logEntry gin.H
 		var deployment_id, project_id, data, metadata, data_length, created_at string
+
 		if err := rows.Scan(&id, &deployment_id, &project_id, &data, &metadata, &data_length, &created_at); err != nil {
 			logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveDeploymentLogsMessage)
 		}
-		logs = append(logs, gin.H{"id": id, "deployment_id": deployment_id, "project_id": project_id, "data": data, "metadata": metadata, "data_length": data_length, "created_at": created_at})
+
+		logEntry = gin.H{
+			"id":            id,
+			"deployment_id": deployment_id,
+			"project_id":    project_id,
+			"data":          data,
+			"metadata":      metadata,
+			"data_length":   data_length,
+			"created_at":    created_at,
+		}
+		logs = append(logs, logEntry)
 	}
+
+	if err := rows.Err(); err != nil {
+		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveDeploymentLogsMessage)
+		return
+	}
+
+	totalLogs := model.GetTotalDeploymentLogsCount(deploymentId)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"logs":        logs,
 		"page":        page,
 		"per_page":    itemsPerPage,
-		"total_pages": calculateTotalPages(page, itemsPerPage),
+		"total_logs":  totalLogs,
+		"total_pages": calculateTotalPages(totalLogs, itemsPerPage),
 	})
 }
