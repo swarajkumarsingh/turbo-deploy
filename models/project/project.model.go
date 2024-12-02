@@ -15,7 +15,7 @@ var database = db.Mgr.DBConn
 
 func GetProjectById(context context.Context, pid int) (Project, error) {
 	var model Project
-	query := "SELECT * FROM users WHERE id = $1"
+	query := "SELECT * FROM projects WHERE id = $1"
 	err := database.GetContext(context, &model, query, pid)
 	if err == nil {
 		return model, nil
@@ -23,9 +23,9 @@ func GetProjectById(context context.Context, pid int) (Project, error) {
 	return model, err
 }
 
-func GetProjectListPaginatedValue(uid string, itemsPerPage, offset int) (*sql.Rows, error) {
+func GetProjectListPaginatedValue(context context.Context, uid string, itemsPerPage, offset int) (*sql.Rows, error) {
 	query := `SELECT id, name, subdomain, language FROM projects WHERE user_id = $1 ORDER BY id LIMIT $2 OFFSET $3`
-	return database.Query(query, uid, itemsPerPage, offset)
+	return database.QueryContext(context, query, uid, itemsPerPage, offset)
 }
 
 func IsSubDomainAvailable(ctx context.Context, subDomain string) (bool, error) {
@@ -78,7 +78,7 @@ func DeleteProjectFromUser(ctx context.Context, pid int) error {
 
 func CreateProject(context context.Context, body ProjectBody) (bool, error) {
 	query := `INSERT INTO projects(user_id, name, source_code_url, subdomain, custom_domain, source_code, language, is_dockerized) VALUES($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err := database.Exec(query, body.UserId, body.Name, body.SourceCodeUrl, body.Subdomain, body.Subdomain, body.SourceCode, body.Language, body.IsDockerized)
+	_, err := database.ExecContext(context, query, body.UserId, body.Name, body.SourceCodeUrl, body.Subdomain, body.Subdomain, body.SourceCode, body.Language, body.IsDockerized)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			return true, errors.New(messages.SubDomainAlreadyExists)

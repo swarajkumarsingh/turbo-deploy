@@ -42,9 +42,9 @@ func UserAlreadyExistsWithEmail(email string) bool {
 	return exists
 }
 
-func InsertUser(body UserBody, password string) error {
+func InsertUser(context context.Context, body UserBody, password string) error {
 	query := `INSERT INTO users(username, firstname, lastname, email, password, phone, address) VALUES($1, $2, $3, $4, $5, $6, $7)`
-	data, err := database.Exec(query, body.Username, body.FirstName, body.LastName, body.Email, password, body.Phone, body.Address)
+	data, err := database.ExecContext(context, query, body.Username, body.FirstName, body.LastName, body.Email, password, body.Phone, body.Address)
 	fmt.Println("Hello ", data)
 	if err != nil {
 		return err

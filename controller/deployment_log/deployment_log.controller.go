@@ -13,6 +13,7 @@ import (
 // get all user Deployment - from logs table
 func GetDeploymentLogs(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
 
 	page := getCurrentPageValue(ctx)
 	itemsPerPage := getItemPerPageValue(ctx)
@@ -23,7 +24,7 @@ func GetDeploymentLogs(ctx *gin.Context) {
 		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidDeploymentIdMessage)
 	}
 
-	rows, err := model.GetDeploymentLogsPaginatedValue(deploymentId, itemsPerPage, offset)
+	rows, err := model.GetDeploymentLogsPaginatedValue(reqCtx, deploymentId, itemsPerPage, offset)
 	if err != nil {
 		logger.WithRequest(ctx).Errorln(deploymentId, itemsPerPage, offset, err.Error())
 		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveDeploymentLogsMessage)
@@ -58,7 +59,7 @@ func GetDeploymentLogs(ctx *gin.Context) {
 		return
 	}
 
-	totalLogs := model.GetTotalDeploymentLogsCount(deploymentId)
+	totalLogs := model.GetTotalDeploymentLogsCount(reqCtx, deploymentId)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"logs":        logs,

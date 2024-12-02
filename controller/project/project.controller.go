@@ -64,23 +64,24 @@ func GetProject(ctx *gin.Context) {
 
 	pid, valid := getProjectIdFromParam(ctx)
 	if !valid {
-		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidProjectIdMessage)
 	}
 
-	user, err := model.GetProjectById(reqCtx, pid)
+	project, err := model.GetProjectById(reqCtx, pid)
 	if err != nil {
-		logger.WithRequest(ctx).Panicln(http.StatusNotFound, messages.UserNotFoundMessage)
+		logger.WithRequest(ctx).Panicln(http.StatusNotFound, messages.ProjectNotFoundMessage)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
-		"user":  user,
+		"error":   false,
+		"project": project,
 	})
 }
 
 // get all user project
 func GetAllProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
 
 	page := getCurrentPageValue(ctx)
 	itemsPerPage := getItemPerPageValue(ctx)
@@ -91,9 +92,9 @@ func GetAllProject(ctx *gin.Context) {
 		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
 	}
 
-	rows, err := model.GetProjectListPaginatedValue(userId, itemsPerPage, offset)
+	rows, err := model.GetProjectListPaginatedValue(reqCtx, userId, itemsPerPage, offset)
 	if err != nil {
-		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveUsersMessage)
+		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveProjectsMessage)
 	}
 	defer rows.Close()
 
@@ -103,7 +104,7 @@ func GetAllProject(ctx *gin.Context) {
 		var id int
 		var name, subdomain, language string
 		if err := rows.Scan(&id, &name, &subdomain, &language); err != nil {
-			logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveUsersMessage)
+			logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveProjectsMessage)
 		}
 		projects = append(projects, gin.H{"id": id, "name": name, "subdomain": subdomain, "language": language})
 	}
@@ -123,7 +124,7 @@ func UpdateProject(ctx *gin.Context) {
 
 	pid, valid := getProjectIdFromParam(ctx)
 	if !valid {
-		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidProjectIdMessage)
 	}
 
 	// get projectName and customDomain
@@ -156,11 +157,11 @@ func UpdateProject(ctx *gin.Context) {
 	})
 }
 
-// delete project
+// delete all user project
 func DeleteAllProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 	reqCtx := ctx.Request.Context()
-
+	
 	// get project id
 	uid, valid := getUserIdFromReq(ctx)
 	if !valid {
@@ -178,7 +179,7 @@ func DeleteAllProject(ctx *gin.Context) {
 	})
 }
 
-// delete all user project
+// delete project
 func DeleteProject(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
 	reqCtx := ctx.Request.Context()

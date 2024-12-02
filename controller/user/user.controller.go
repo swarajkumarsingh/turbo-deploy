@@ -16,6 +16,7 @@ import (
 // create user
 func CreateUser(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
 
 	body, err := getCreateUserBody(ctx)
 	if err != nil {
@@ -35,7 +36,7 @@ func CreateUser(ctx *gin.Context) {
 		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
 	}
 
-	if err = model.InsertUser(body, hashedPassword); err != nil {
+	if err = model.InsertUser(reqCtx, body, hashedPassword); err != nil {
 		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
 	}
 
