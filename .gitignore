@@ -5,6 +5,7 @@ main
 run.sh
 .vscode
 aws.go
+node_modules
 postgres-data
 pgadmin
 pgadmin-servers.json

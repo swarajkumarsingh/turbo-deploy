@@ -10,7 +10,11 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.511.0",
-    "kafkajs": "^2.2.4",
-    "mime-types": "^2.1.35"
+    "@aws-sdk/client-sqs": "^3.511.0",
+    "dotenv": "^16.3.1",
+    "mime-types": "^2.1.35",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "child_process": "^1.0.2"
   }
 }
