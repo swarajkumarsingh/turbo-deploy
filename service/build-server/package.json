@@ -11,10 +11,10 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.511.0",
     "@aws-sdk/client-sqs": "^3.511.0",
-    "dotenv": "^16.3.1",
-    "mime-types": "^2.1.35",
+    "child_process": "^1.0.2",
+    "dotenv": "^16.4.7",
     "fs": "^0.0.1-security",
-    "path": "^0.12.7",
-    "child_process": "^1.0.2"
+    "mime-types": "^2.1.35",
+    "path": "^0.12.7"
   }
 }

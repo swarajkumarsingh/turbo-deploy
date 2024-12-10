@@ -1,3 +1,4 @@
+require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const mime = require("mime-types");
@@ -282,30 +283,51 @@ async function uploadFileToS3(filePath, s3Key) {
   }
 }
 
+// Recursive function to get all files from a directory
+const getAllFiles = (dirPath, files = []) => {
+  const items = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const item of items) {
+    const itemPath = path.join(dirPath, item.name);
+    if (item.isDirectory()) {
+      // Recursively process directories
+      getAllFiles(itemPath, files);
+    } else {
+      files.push(itemPath); // Add file to the list
+    }
+  }
+  return files;
+};
+
+// TODO react package.json and check for bad build command
+function checkValidBuildCommandFromPackageFile(path) {
+  return true;
+}
+
 async function init() {
   console.log("Executing script.js");
   await publishLog("Build Started...");
   await pushDeploymentStatus(DeploymentStatus.PROG);
 
-  try {
-    const outDirPath = sanitizePath(path.join(__dirname, "output"));
+  const outDirPath = sanitizePath(path.join(__dirname, "output"));
+  const validBuildCommand = checkValidBuildCommandFromPackageFile(outDirPath);
+  if (!validBuildCommand) {
+    await publishLog("Vulnerable build command found :(");
+    await pushDeploymentStatus(DeploymentStatus.FAIL); 
+  }
 
+  try {
     // Secure npm install
     await publishLog("Executing npm install command");
-    await runSecureNpmCommand("install", outDirPath);
+    // await runSecureNpmCommand("install", outDirPath);
     await publishLog("npm install completed successfully");
 
     // Secure npm build
     await publishLog("Executing npm build command");
+    
     // await runSecureNpmCommand("run build", outDirPath);
-    const p = exec(
-      `cd ${outDirPath} && BUILD_PATH=${path.join(
-        outDirPath,
-        "my-build"
-      )} npm run build`
-    );
+    const p = exec(`cd ${outDirPath} && npm install && npm run build`);
 
-    p.stdout.on("data", function (data) {
+    p.stdout.on("data", async function (data) {
       console.log(data.toString());
       publishLog(data.toString());
     });
@@ -313,48 +335,61 @@ async function init() {
     p.stdout.on("error", async function (data) {
       console.log("Error", data.toString());
       await publishLog(`error: ${data.toString()}`);
+   process.exit(1);
     });
 
     p.stdout.on("close", async function () {
       await publishLog("npm build completed successfully");
 
-      const distFolderPath = sanitizePath(
-        path.join(__dirname, "output", "my-build")
-      );
-      const distFiles = fs.readdirSync(distFolderPath, { withFileTypes: true });
+    const outputFolder = fs.existsSync(path.join(__dirname, "output", "dist"))
+      ? "dist"
+      : "build";
+     const distFolderPath = path.join(__dirname, "output", outputFolder);
+     const filesToUpload = getAllFiles(distFolderPath); 
 
-      for (const file of distFiles) {
-        const filePath = sanitizePath(path.join(distFolderPath, file.name));
-        if (file.isDirectory()) continue;
-        const s3Key = path.relative(distFolderPath, filePath);
-        console.log("uploading", filePath);
-        await publishLog(`uploading ${file.name}`);
-        await uploadFileToS3(filePath, s3Key);
-        await publishLog(`uploaded ${file.name}`);
-        console.log("uploaded", filePath);
-      }
+     await publishLog(`Starting to upload`);
 
-      await publishLog("Done");
-      await pushDeploymentStatus(DeploymentStatus.READY);
-      console.log("Done...");
-      process.exit(0);
-    })
+     for (const filePath of filesToUpload) {
+       const relativeFilePath = path.relative(distFolderPath, filePath);
+       const s3Key = `__outputs/${DEPLOYMENT_ID}/${relativeFilePath.replace(
+         /\\/g,
+         "/"
+       )}`;
 
-    
+       console.log("uploading", relativeFilePath);
+       await publishLog(`uploading ${relativeFilePath}`);
+
+       const command = new PutObjectCommand({
+         Bucket: S3_BUCKET_NAME,
+         Key: s3Key,
+         Body: fs.createReadStream(filePath),
+         ContentType: mime.lookup(filePath) || "application/octet-stream",
+       });
+
+       await s3Client.send(command);
+       await publishLog(`uploaded ${relativeFilePath}`);
+       console.log("uploaded", relativeFilePath);
+     }
+
+     await publishLog(`Done`);
+     console.log("Done...");
+     process.exit(0);
+
+    });
   } catch (error) {
     console.error("Deployment failed:", error);
     await publishLog(`Deployment failed: ${error.message}`);
     await pushDeploymentStatus(DeploymentStatus.FAIL);
-    process.exit(1);
+   process.exit(1);
   }
 }
 
-process.on("SIGTERM", () => {
+process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down gracefully");
   process.exit(0);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", async (reason, promise) => {
   console.log("Unhandled Rejection at:", promise, "reason:", reason);
 });
 

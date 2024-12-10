@@ -6,3 +6,14 @@
 ### Docker Build to compile and push to s3
 
 ### Proxy from golang to s3
+
+1. Read git clone, package.json and check for mf hackers!
+
+
+
+
+# Extra
+1. When AWS ECS sever is down, will build user project in main server
+2. in script.js, don't use sync function, use async functions
+3. use promise to upload files, use p-concurrency package 
+4. use cloudfront from reverse-proxy
