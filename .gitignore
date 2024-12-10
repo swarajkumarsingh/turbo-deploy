@@ -9,3 +9,4 @@ node_modules
 postgres-data
 pgadmin
 pgadmin-servers.json
+*output
