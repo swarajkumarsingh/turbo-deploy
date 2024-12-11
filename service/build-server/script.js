@@ -1,13 +1,17 @@
-require("dotenv").config();
+const os = require("os");
 const fs = require("fs");
+require("dotenv").config();
 const path = require("path");
 const mime = require("mime-types");
-const { exec, execFile } = require("child_process");
+const stripAnsi = require("strip-ansi");
+const { exec } = require("child_process");
 
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
 
 const requiredEnvVars = [
+  "APP_NAME",
+  "ENVIRONMENT",
   "PROJECT_ID",
   "DEPLOYMENT_ID",
   "LOG_QUEUE_URL",
@@ -26,6 +30,8 @@ requiredEnvVars.forEach((varName) => {
 });
 
 const {
+  APP_NAME,
+  ENVIRONMENT,
   PROJECT_ID,
   DEPLOYMENT_ID,
   LOG_QUEUE_URL,
@@ -58,15 +64,47 @@ const DeploymentStatus = {
   READY: "READY",
 };
 
-const EXEC_TIMEOUT = 600000; // 10 minutes
-const MAX_BUFFER = 1024 * 1024 * 10; // 10MB
-const MAX_RETRIES = 3;
+const LogType = {
+  INFO: "INFO",
+  ERROR: "ERROR",
+  WARN: "WARN",
+};
 
-/**
- * Utility: Publish a message to an SQS queue.
- * @param {string} queueUrl - The SQS queue URL.
- * @param {Object} message - The message payload.
- */
+let outputFolder = "build";
+const outputFolders = ["dist", "build", "public", "release"];
+
+const MAX_FILE_SIZE = 1024 * 1024;
+const PACKAGE_JSON_PATH = path.join(__dirname, "output", "package.json");
+const VULNERABLE_COMMANDS = [
+  /rm\s*-rf\s*$/,
+  /curl\s*http[s]?:\/\//,
+  /wget\s*http[s]?:\/\//,
+  /eval\s*\(.*\)/,
+  /exec\s*\(.*\)/,
+  /\$\(.*\)/,
+  /cat\s*.*$/,
+  /more\s*.*$/,
+  /tail\s*-f\s*.*$/,
+  /head\s*-n\s*\d*\s*.*$/,
+  /less\s*.*$/,
+  /touch\s*.*$/,
+  /chmod\s*.*$/,
+  /chown\s*.*$/,
+  /ln\s*.*$/,
+  /env\s*$/,
+  /printenv\s*$/,
+  /export\s*.*$/,
+  /ps\s*-aux$/,
+  /top\s*$/,
+  /pstree\s*$/,
+  /kill\s*$/,
+  /killall\s*$/,
+  /lsof\s*$/,
+  /netstat\s*$/,
+  /scp\s*.*$/,
+  /ssh\s*.*$/,
+];
+
 async function publishToQueue(queueUrl, message) {
   try {
     const command = new SendMessageCommand({
@@ -79,41 +117,48 @@ async function publishToQueue(queueUrl, message) {
   }
 }
 
-/**
- * Logs a message to the log queue.
- * @param {string} log - The log message to publish.
- */
-async function publishLog(log) {
-  const logMessage = {
+async function publishLog({
+  message = "",
+  logType = LogType.INFO,
+  cause = "",
+  name = "",
+  stack = "",
+}) {
+  const host = os.hostname();
+  const obj = {
+    appName: APP_NAME,
+    message: stripAnsi(message),
+    logType,
     projectId: PROJECT_ID,
     deploymentId: DEPLOYMENT_ID,
-    log,
+    environment: process.env.ENVIRONMENT || "DEV",
+    host,
+    cause: stripAnsi(cause),
+    name: stripAnsi(name),
+    stack: stripAnsi(stack),
     timestamp: new Date().toISOString(),
   };
-  await publishToQueue(LOG_QUEUE_URL, logMessage);
-  console.log(`Log: ${log}`);
+
+  await publishToQueue(LOG_QUEUE_URL, obj);
+  console.log(`Log: ${message}`);
 }
 
-/**
- * Pushes deployment status to the status queue.
- * @param {string} status - Deployment status (PROG, READY, FAIL).
- */
 async function pushDeploymentStatus(status) {
+  const host = os.hostname();
+  const sanitizedStatus = stripAnsi(status);
+
   const statusMessage = {
+    app_name: APP_NAME,
     projectId: PROJECT_ID,
     deploymentId: DEPLOYMENT_ID,
-    status,
+    sanitizedStatus,
+    host,
     timestamp: new Date().toISOString(),
   };
   await publishToQueue(STATUS_QUEUE_URL, statusMessage);
   console.log(`Status: ${status}`);
 }
 
-/**
- * Validates and sanitizes a directory path.
- * @param {string} dirPath - The path to validate.
- * @returns {string} - The sanitized path.
- */
 function sanitizePath(dirPath) {
   if (!path.isAbsolute(dirPath)) throw new Error("Path must be absolute");
   const sanitizedPath = path.normalize(dirPath);
@@ -122,265 +167,136 @@ function sanitizePath(dirPath) {
   return sanitizedPath;
 }
 
-// List of potentially vulnerable and dangerous npm commands
-const VULNERABLE_NPM_COMMANDS = [
-  // System and shell commands
-  "install",
-  "build",
-  "run build",
-  "uninstall",
-  "update",
-  "run",
-  "start",
-  "test",
-
-  // Potentially risky operations
-  "publish",
-  "link",
-  "pack",
-  "rebuild",
-  "audit",
-  "config",
-
-  // Script execution commands
-  "run-script",
-  "explore",
-  "doctor",
-  "init",
-
-  // Advanced package management
-  "version",
-  "prune",
-  "shrinkwrap",
-];
-
-// List of explicitly blocked commands
-const BLOCKED_COMMANDS = [
-  // Commands that could potentially expose or modify system resources
-  "rm",
-  "del",
-  "delete",
-  "curl",
-  "wget",
-  "cat",
-  "mv",
-  "cp",
-  "ssh",
-  "scp",
-  "exec",
-  "eval",
-  "sudo",
-  "chmod",
-  "chown",
-
-  // Potentially destructive npm script names
-  "destroy",
-  "wipe",
-  "nuke",
-  "remove-all",
-];
-
-/**
- * Enhanced command validation with multiple security checks
- * @param {string} command - The npm command to validate
- * @throws {Error} - If the command is considered unsafe
- */
-/**
- * Enhanced command validation with multiple security checks
- * @param {string} command - The npm command to validate
- * @throws {Error} - If the command is considered unsafe
- */
-function validateNpmCommand(command) {
-  // Check if command is in the allowed list
-  if (!VULNERABLE_NPM_COMMANDS.includes(command)) {
-    throw new Error(`Unauthorized npm command: ${command}`);
-  }
-
-  // Additional check for blocked command patterns
-  const lowercaseCommand = command.toLowerCase();
-  const hasBlockedCommand = BLOCKED_COMMANDS.some((blockedCmd) =>
-    lowercaseCommand.includes(blockedCmd)
-  );
-
-  if (hasBlockedCommand) {
-    throw new Error(`Potentially dangerous command detected: ${command}`);
-  }
-
-  const sanitizedCommand = command.replace(/[^a-zA-Z0-9-\s]/g, "");
-  if (sanitizedCommand !== command) {
-    throw new Error("Invalid characters in npm command");
-  }
-
-  return sanitizedCommand;
-}
-
-/**
- * Secure NPM command execution function
- * @param {string} command - The npm command to run
- * @param {string} cwd - Current working directory
- * @returns {Promise} - Resolves with command output
- */
-function runSecureNpmCommand(command, cwd) {
-  return new Promise((resolve, reject) => {
-    try {
-      // Validate the command before execution
-      const sanitizedCommand = validateNpmCommand(command);
-
-      // Use execFile for secure execution
-      const npmProcess = execFile(
-        "npm",
-        [sanitizedCommand],
-        {
-          cwd: cwd,
-          shell: false,
-          env: {
-            PATH: process.env.PATH,
-            HOME: process.env.HOME,
-            NODE_ENV: "production",
-          },
-          timeout: EXEC_TIMEOUT,
-          maxBuffer: MAX_BUFFER,
-        },
-        (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Secure npm ${command} error:`, error);
-            console.log(stderr);
-            reject(error);
-          } else {
-            console.log(`Secure npm ${command} output:`, stdout);
-            resolve(stdout);
-          }
-        }
-      );
-    } catch (validationError) {
-      reject(validationError);
-    }
-  });
-}
-
-/**
- * Uploads a file to S3 with retries for transient errors.
- * @param {string} filePath - The file path to upload.
- * @param {string} s3Key - The S3 key.
- */
-async function uploadFileToS3(filePath, s3Key) {
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const command = new PutObjectCommand({
-        Bucket: S3_BUCKET_NAME,
-        Key: s3Key,
-        Body: fs.createReadStream(filePath),
-        ContentType: mime.lookup(filePath) || "application/octet-stream",
-      });
-      await s3Client.send(command);
-      console.log(`Uploaded: ${filePath}`);
-      return;
-    } catch (error) {
-      console.error(`Attempt ${attempt}: Failed to upload ${filePath}:`, error);
-      if (attempt === MAX_RETRIES) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-    }
-  }
-}
-
-// Recursive function to get all files from a directory
 const getAllFiles = (dirPath, files = []) => {
   const items = fs.readdirSync(dirPath, { withFileTypes: true });
   for (const item of items) {
     const itemPath = path.join(dirPath, item.name);
-    if (item.isDirectory()) {
-      // Recursively process directories
-      getAllFiles(itemPath, files);
-    } else {
-      files.push(itemPath); // Add file to the list
-    }
+    if (item.isDirectory()) getAllFiles(itemPath, files);
+    else files.push(itemPath);
   }
   return files;
 };
 
-// TODO react package.json and check for bad build command
-function checkValidBuildCommandFromPackageFile(path) {
-  return true;
+function checkValidBuildCommandFromPackageFile() {
+  try {
+    const stats = fs.statSync(PACKAGE_JSON_PATH);
+    if (stats.size > MAX_FILE_SIZE) return false;
+
+    const data = fs.readFileSync(PACKAGE_JSON_PATH, {
+      encoding: "utf-8",
+      flag: "r",
+    });
+
+    let packageJson;
+    try {
+      packageJson = JSON.parse(data);
+    } catch {
+      return false;
+    }
+
+    if (
+      !packageJson.scripts ||
+      !packageJson.scripts.build ||
+      typeof packageJson.scripts.build !== "string"
+    )
+      return false;
+
+    const buildCommand = packageJson.scripts.build;
+    const sanitizedCommand = buildCommand.trim().replace(/^["']|["']$/g, "");
+
+    return !VULNERABLE_COMMANDS.some((pattern) =>
+      pattern.test(sanitizedCommand)
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function init() {
-  console.log("Executing script.js");
-  await publishLog("Build Started...");
-  await pushDeploymentStatus(DeploymentStatus.PROG);
-
-  const outDirPath = sanitizePath(path.join(__dirname, "output"));
-  const validBuildCommand = checkValidBuildCommandFromPackageFile(outDirPath);
-  if (!validBuildCommand) {
-    await publishLog("Vulnerable build command found :(");
-    await pushDeploymentStatus(DeploymentStatus.FAIL); 
-  }
-
   try {
-    // Secure npm install
-    await publishLog("Executing npm install command");
-    // await runSecureNpmCommand("install", outDirPath);
-    await publishLog("npm install completed successfully");
+    console.log("Executing script.js");
+    await publishLog({ message: `Running Environment: ${ENVIRONMENT}` });
+    await publishLog({ message: "Build Started..." });
+    await pushDeploymentStatus(DeploymentStatus.PROG);
 
-    // Secure npm build
-    await publishLog("Executing npm build command");
-    
-    // await runSecureNpmCommand("run build", outDirPath);
+    const outDirPath = sanitizePath(path.join(__dirname, "output"));
+
+    const validBuildCommand = checkValidBuildCommandFromPackageFile(outDirPath);
+    if (!validBuildCommand) {
+      await publishLog({ message: "Vulnerable build command found :(" });
+      await pushDeploymentStatus(DeploymentStatus.FAIL);
+      process.exit(1);
+    }
+
+    await publishLog({ message: "Executing npm install & npm build commands" });
     const p = exec(`cd ${outDirPath} && npm install && npm run build`);
 
     p.stdout.on("data", async function (data) {
-      console.log(data.toString());
-      publishLog(data.toString());
+      await publishLog({ message: data.toString() });
     });
 
-    p.stdout.on("error", async function (data) {
-      console.log("Error", data.toString());
-      await publishLog(`error: ${data.toString()}`);
-   process.exit(1);
+    p.stdout.on("error", async function (error) {
+      await publishLog({
+        message: `error: ${error.message}`,
+        logType: LogType.ERROR,
+        cause: error.cause,
+        name: error.name,
+        stack: error.stack.toString(),
+      });
+      process.exit(1);
     });
 
     p.stdout.on("close", async function () {
-      await publishLog("npm build completed successfully");
+      await publishLog({
+        message: "npm install & npm build completed successfully",
+      });
 
-    const outputFolder = fs.existsSync(path.join(__dirname, "output", "dist"))
-      ? "dist"
-      : "build";
-     const distFolderPath = path.join(__dirname, "output", outputFolder);
-     const filesToUpload = getAllFiles(distFolderPath); 
+      for (const folder of outputFolders) {
+        if (fs.existsSync(path.join(__dirname, "output", folder))) {
+          outputFolder = folder;
+          break;
+        }
+      }
 
-     await publishLog(`Starting to upload`);
+      const distFolderPath = path.join(__dirname, "output", outputFolder);
+      const filesToUpload = getAllFiles(distFolderPath);
 
-     for (const filePath of filesToUpload) {
-       const relativeFilePath = path.relative(distFolderPath, filePath);
-       const s3Key = `__outputs/${DEPLOYMENT_ID}/${relativeFilePath.replace(
-         /\\/g,
-         "/"
-       )}`;
+      await publishLog({
+        message: `Starting to uploading in dir ${outputFolder}`,
+      });
 
-       console.log("uploading", relativeFilePath);
-       await publishLog(`uploading ${relativeFilePath}`);
+      for (const filePath of filesToUpload) {
+        const relativeFilePath = path.relative(distFolderPath, filePath);
+        const s3Key = `__outputs/${DEPLOYMENT_ID}/${relativeFilePath.replace(
+          /\\/g,
+          "/"
+        )}`;
 
-       const command = new PutObjectCommand({
-         Bucket: S3_BUCKET_NAME,
-         Key: s3Key,
-         Body: fs.createReadStream(filePath),
-         ContentType: mime.lookup(filePath) || "application/octet-stream",
-       });
+        await publishLog({ message: `uploading ${relativeFilePath}` });
 
-       await s3Client.send(command);
-       await publishLog(`uploaded ${relativeFilePath}`);
-       console.log("uploaded", relativeFilePath);
-     }
+        const command = new PutObjectCommand({
+          Bucket: S3_BUCKET_NAME,
+          Key: s3Key,
+          Body: fs.createReadStream(filePath),
+          ContentType: mime.lookup(filePath) || "application/octet-stream",
+        });
 
-     await publishLog(`Done`);
-     console.log("Done...");
-     process.exit(0);
+        await s3Client.send(command);
+        await publishLog({ message: `uploaded ${relativeFilePath}` });
+      }
 
+      await publishLog({ message: `Done...` });
+      await pushDeploymentStatus(DeploymentStatus.READY);
+      process.exit(0);
     });
   } catch (error) {
     console.error("Deployment failed:", error);
-    await publishLog(`Deployment failed: ${error.message}`);
+    await publishLog({
+      message: `Deployment failed: ${error.message}`,
+      logType: LogType.ERROR,
+    });
     await pushDeploymentStatus(DeploymentStatus.FAIL);
-   process.exit(1);
+    process.exit(1);
   }
 }
 
@@ -390,7 +306,14 @@ process.on("SIGTERM", async () => {
 });
 
 process.on("unhandledRejection", async (reason, promise) => {
-  console.log("Unhandled Rejection at:", promise, "reason:", reason);
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  await publishLog({
+    message: `Unhandled Rejection: ${reason}`,
+    logType: LogType.ERROR,
+  });
+  await pushDeploymentStatus(DeploymentStatus.FAIL);
+  process.exit(1);
 });
+
 
 init();
