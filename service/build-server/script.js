@@ -1,13 +1,22 @@
-const os = require("os");
-const fs = require("fs");
-require("dotenv").config();
-const path = require("path");
-const mime = require("mime-types");
-const stripAnsi = require("strip-ansi");
-const { spawn } = require("child_process");
+import os from "os";
+import fs from "fs";
+import dotenv from "dotenv";
+import path from "path";
+import mime from "mime-types";
+import stripAnsi from "strip-ansi";
+import { spawn } from "child_process";
+import PQueue from "p-queue";
+import retry from "async-retry";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config();
 
 const requiredEnvVars = [
   "APP_NAME",
@@ -70,6 +79,10 @@ const LogType = {
   WARN: "WARN",
 };
 
+const MAX_RETRIES = 3;
+const MIN_RETRY_TIMEOUT = 1000;
+const MAX_RETRY_TIMEOUT = 5000;
+
 const DEFAULT_BUILD_FOLDER = "build";
 const DEFAULT_OUTPUT_FOLDER = "output";
 const outputFolders = ["dist", "build", "public", "release"];
@@ -104,6 +117,82 @@ const VULNERABLE_COMMANDS = [
   /netstat\s*$/,
   /scp\s*.*$/,
   /ssh\s*.*$/,
+  /git\s*.*$/,
+  /docker\s*.*$/,
+  /rm\s*.*$/,
+  /find\s*.*$/,
+  /xargs\s*.*$/,
+  /bash\s*.*$/,
+  /sh\s*.*$/,
+  /sudo\s*.*$/,
+  /echo\s*.*\$\{.*\}/,
+  /python\s*.*$/,
+  /perl\s*.*$/,
+  /ruby\s*.*$/,
+  /node\s*.*$/,
+  /make\s*.*$/,
+  /tar\s*.*$/,
+  /gzip\s*.*$/,
+  /bzip2\s*.*$/,
+  /xz\s*.*$/,
+  /unzip\s*.*$/,
+  /unrar\s*.*$/,
+  /rar\s*.*$/,
+  /dd\s*.*$/,
+  /nc\s*.*$/,
+  /nmap\s*.*$/,
+  /iptables\s*.*$/,
+  /ufw\s*.*$/,
+  /systemctl\s*.*$/,
+  /service\s*.*$/,
+  /reboot\s*.*$/,
+  /shutdown\s*.*$/,
+  /halt\s*.*$/,
+  /poweroff\s*.*$/,
+  /init\s*.*$/,
+  /mount\s*.*$/,
+  /umount\s*.*$/,
+  /chmod\s*.*$/,
+  /chattr\s*.*$/,
+  /iptables\s*.*$/,
+  /sysctl\s*.*$/,
+  /echo\s*.*$/,
+  /bc\s*.*$/,
+  /tr\s*.*$/,
+  /tac\s*.*$/,
+  /tee\s*.*$/,
+  /awk\s*.*$/,
+  /sed\s*.*$/,
+  /grep\s*.*$/,
+  /cut\s*.*$/,
+  /sort\s*.*$/,
+  /uniq\s*.*$/,
+  /join\s*.*$/,
+  /paste\s*.*$/,
+  /join\s*.*$/,
+  /split\s*.*$/,
+  /xargs\s*.*$/,
+  /awk\s*.*$/,
+  /sed\s*.*$/,
+  /rsync\s*.*$/,
+  /scp\s*.*$/,
+  /wget\s*.*$/,
+  /curl\s*.*$/,
+  /setuid\s*.*$/,
+  /setgid\s*.*$/,
+  /chroot\s*.*$/,
+  /launchctl\s*.*$/,
+  /chkrootkit\s*.*$/,
+  /rkhunter\s*.*$/,
+  /netstat\s*.*$/,
+  /python\s*.*$/,
+  /perl\s*.*$/,
+  /ruby\s*.*$/,
+  /npm\s*.*$/,
+  /yarn\s*.*$/,
+  /pip\s*.*$/,
+  /gem\s*.*$/,
+  /composer\s*.*$/,
 ];
 
 async function publishToQueue(queueUrl, message) {
@@ -213,6 +302,8 @@ function checkValidBuildCommandFromPackageFile() {
   }
 }
 
+const queue = new PQueue({ concurrency: 5 });
+
 async function init() {
   try {
     console.log("Executing script.js");
@@ -302,24 +393,58 @@ async function init() {
       });
 
       for (const filePath of filesToUpload) {
-        const relativeFilePath = path.relative(distFolderPath, filePath);
-        const s3Key = `__outputs/${DEPLOYMENT_ID}/${relativeFilePath.replace(
-          /\\/g,
-          "/"
-        )}`;
+        queue.add(async () => {
+          const relativeFilePath = path.relative(distFolderPath, filePath);
+          const s3Key = `__outputs/${DEPLOYMENT_ID}/${relativeFilePath.replace(
+            /\\/g,
+            "/"
+          )}`;
 
-        await publishLog({ message: `Uploading ${relativeFilePath}` });
+          await publishLog({ message: `Uploading ${relativeFilePath}` });
 
-        const command = new PutObjectCommand({
-          Bucket: S3_BUCKET_NAME,
-          Key: s3Key,
-          Body: fs.createReadStream(filePath),
-          ContentType: mime.lookup(filePath) || "application/octet-stream",
+          const command = new PutObjectCommand({
+            Bucket: S3_BUCKET_NAME,
+            Key: s3Key,
+            Body: fs.createReadStream(filePath),
+            ContentType: mime.lookup(filePath) || "application/octet-stream",
+          });
+
+          try {
+            await retry(
+              async () => {
+                await s3Client.send(command);
+                await publishLog({ message: `Uploaded ${relativeFilePath}` });
+              },
+              {
+                retries: MAX_RETRIES,
+                factor: 2,
+                minTimeout: MIN_RETRY_TIMEOUT,
+                maxTimeout: MAX_RETRY_TIMEOUT,
+                onRetry: async (error, attempt) => {
+                  console.log(
+                    `Retry attempt ${attempt} failed for ${relativeFilePath}: ${error.message}`
+                  );
+                  await publishLog({
+                    message: `Retry attempt ${attempt} failed for ${relativeFilePath}: ${error.message}`,
+                    logType: LogType.ERROR,
+                  });
+                },
+              }
+            );
+          } catch (uploadError) {
+            console.error(
+              `Failed to upload file ${relativeFilePath}: ${uploadError.message}`
+            );
+            await publishLog({
+              message: `Failed to upload file ${relativeFilePath}: ${uploadError.message}`,
+              logType: LogType.ERROR,
+            });
+            throw new Error("Failed to upload file ${relativeFilePath}: ${uploadError.message}"); 
+          }
         });
-
-        await s3Client.send(command);
-        await publishLog({ message: `Uploaded ${relativeFilePath}` });
       }
+
+      await queue.onIdle();
 
       await publishLog({ message: "All files uploaded successfully." });
       await pushDeploymentStatus(DeploymentStatus.READY);

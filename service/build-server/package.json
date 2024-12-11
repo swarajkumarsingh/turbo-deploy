@@ -2,6 +2,7 @@
   "name": "build-server",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "script.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,10 +12,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.511.0",
     "@aws-sdk/client-sqs": "^3.511.0",
+    "async-retry": "^1.3.3",
     "child_process": "^1.0.2",
     "dotenv": "^16.4.7",
     "fs": "^0.0.1-security",
     "mime-types": "^2.1.35",
+    "p-queue": "^8.0.1",
     "path": "^0.12.7",
     "strip-ansi": "^6.0.1"
   }
