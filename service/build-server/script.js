@@ -4,7 +4,7 @@ require("dotenv").config();
 const path = require("path");
 const mime = require("mime-types");
 const stripAnsi = require("strip-ansi");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
@@ -220,7 +220,9 @@ async function init() {
     await publishLog({ message: "Build Started..." });
     await pushDeploymentStatus(DeploymentStatus.PROG);
 
-    const outDirPath = sanitizePath(path.join(__dirname, DEFAULT_OUTPUT_FOLDER));
+    const outDirPath = sanitizePath(
+      path.join(__dirname, DEFAULT_OUTPUT_FOLDER)
+    );
 
     const validBuildCommand = checkValidBuildCommandFromPackageFile(outDirPath);
     if (!validBuildCommand) {
@@ -230,21 +232,14 @@ async function init() {
     }
 
     await publishLog({ message: "Executing npm install & npm build commands" });
-    const p = exec(`cd ${outDirPath} && npm install && npm run build`);
+
+    const p = spawn("npm", ["install", "&&", "npm", "run", "build"], {
+      cwd: outDirPath,
+      shell: true,
+    });
 
     p.stdout.on("data", async function (data) {
       await publishLog({ message: data.toString() });
-    });
-
-    p.stdout.on("error", async function (error) {
-      await publishLog({
-        message: `error: ${error.message}`,
-        logType: LogType.ERROR,
-        cause: error.cause,
-        name: error.name,
-        stack: error.stack.toString(),
-      });
-      process.exit(1);
     });
 
     p.stderr.on("data", async function (data) {
@@ -252,6 +247,17 @@ async function init() {
         message: data.toString(),
         logType: LogType.ERROR,
       });
+    });
+
+    p.on("error", async function (error) {
+      await publishLog({
+        message: `Error starting process: ${error.message}`,
+        logType: LogType.ERROR,
+        cause: error.cause,
+        name: error.name,
+        stack: error.stack.toString(),
+      });
+      process.exit(1);
     });
 
     p.on("exit", async function (code) {
@@ -265,7 +271,7 @@ async function init() {
       }
     });
 
-    p.stdout.on("close", async function () {
+    p.on("close", async function () {
       await publishLog({
         message: "npm install & npm build completed successfully",
       });
@@ -275,7 +281,11 @@ async function init() {
           fs.existsSync(path.join(__dirname, DEFAULT_OUTPUT_FOLDER, folder))
         ) || DEFAULT_BUILD_FOLDER;
 
-      const distFolderPath = path.join(__dirname, DEFAULT_OUTPUT_FOLDER, outputFolder);
+      const distFolderPath = path.join(
+        __dirname,
+        DEFAULT_OUTPUT_FOLDER,
+        outputFolder
+      );
       if (!fs.existsSync(distFolderPath)) {
         throw new Error(`Output folder "${outputFolder}" does not exist.`);
       }
@@ -288,7 +298,7 @@ async function init() {
       }
 
       await publishLog({
-        message: `Starting to uploading in dir ${outputFolder}`,
+        message: `Starting to upload in dir ${outputFolder}`,
       });
 
       for (const filePath of filesToUpload) {
@@ -298,7 +308,7 @@ async function init() {
           "/"
         )}`;
 
-        await publishLog({ message: `uploading ${relativeFilePath}` });
+        await publishLog({ message: `Uploading ${relativeFilePath}` });
 
         const command = new PutObjectCommand({
           Bucket: S3_BUCKET_NAME,
@@ -308,12 +318,12 @@ async function init() {
         });
 
         await s3Client.send(command);
-        await publishLog({ message: `uploaded ${relativeFilePath}` });
+        await publishLog({ message: `Uploaded ${relativeFilePath}` });
       }
 
       await publishLog({ message: "All files uploaded successfully." });
       await pushDeploymentStatus(DeploymentStatus.READY);
-      await publishLog({ message: `Done...` });
+      await publishLog({ message: "Done..." });
       process.exit(0);
     });
   } catch (error) {
