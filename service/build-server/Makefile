@@ -4,6 +4,9 @@ build:
 run:
 	docker run --env-file .env build-server
 
+start:
+	make build && make run
+
 test:
 	node script.js
 

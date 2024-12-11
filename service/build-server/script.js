@@ -1,20 +1,18 @@
 import os from "os";
 import fs from "fs";
-import dotenv from "dotenv";
 import path from "path";
-import mime from "mime-types";
-import stripAnsi from "strip-ansi";
-import { spawn } from "child_process";
-import PQueue from "p-queue";
-import retry from "async-retry";
-import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { spawn } from "child_process";
+import { fileURLToPath } from "url";
+import { VULNERABLE_COMMANDS } from "./vulnerableCommands.js";
 
+import dotenv from "dotenv";
+import PQueue from "p-queue";
+import mime from "mime-types";
+import retry from "async-retry";
+import stripAnsi from "strip-ansi";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -32,8 +30,8 @@ const requiredEnvVars = [
 ];
 
 requiredEnvVars.forEach((varName) => {
-  if (!process.env[varName]) {
-    console.error(`Missing environment variable: ${varName}`);
+  if (!process.env[varName] || process.env[varName].trim() === "") {
+    console.error(`ERROR: Missing or empty environment variable: ${varName}`);
     process.exit(1);
   }
 });
@@ -87,113 +85,11 @@ const DEFAULT_BUILD_FOLDER = "build";
 const DEFAULT_OUTPUT_FOLDER = "output";
 const outputFolders = ["dist", "build", "public", "release"];
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const MAX_FILE_SIZE = 1024 * 1024;
 const PACKAGE_JSON_PATH = path.join(__dirname, "output", "package.json");
-const VULNERABLE_COMMANDS = [
-  /rm\s*-rf\s*$/,
-  /curl\s*http[s]?:\/\//,
-  /wget\s*http[s]?:\/\//,
-  /eval\s*\(.*\)/,
-  /exec\s*\(.*\)/,
-  /\$\(.*\)/,
-  /cat\s*.*$/,
-  /more\s*.*$/,
-  /tail\s*-f\s*.*$/,
-  /head\s*-n\s*\d*\s*.*$/,
-  /less\s*.*$/,
-  /touch\s*.*$/,
-  /chmod\s*.*$/,
-  /chown\s*.*$/,
-  /ln\s*.*$/,
-  /env\s*$/,
-  /printenv\s*$/,
-  /export\s*.*$/,
-  /ps\s*-aux$/,
-  /top\s*$/,
-  /pstree\s*$/,
-  /kill\s*$/,
-  /killall\s*$/,
-  /lsof\s*$/,
-  /netstat\s*$/,
-  /scp\s*.*$/,
-  /ssh\s*.*$/,
-  /git\s*.*$/,
-  /docker\s*.*$/,
-  /rm\s*.*$/,
-  /find\s*.*$/,
-  /xargs\s*.*$/,
-  /bash\s*.*$/,
-  /sh\s*.*$/,
-  /sudo\s*.*$/,
-  /echo\s*.*\$\{.*\}/,
-  /python\s*.*$/,
-  /perl\s*.*$/,
-  /ruby\s*.*$/,
-  /node\s*.*$/,
-  /make\s*.*$/,
-  /tar\s*.*$/,
-  /gzip\s*.*$/,
-  /bzip2\s*.*$/,
-  /xz\s*.*$/,
-  /unzip\s*.*$/,
-  /unrar\s*.*$/,
-  /rar\s*.*$/,
-  /dd\s*.*$/,
-  /nc\s*.*$/,
-  /nmap\s*.*$/,
-  /iptables\s*.*$/,
-  /ufw\s*.*$/,
-  /systemctl\s*.*$/,
-  /service\s*.*$/,
-  /reboot\s*.*$/,
-  /shutdown\s*.*$/,
-  /halt\s*.*$/,
-  /poweroff\s*.*$/,
-  /init\s*.*$/,
-  /mount\s*.*$/,
-  /umount\s*.*$/,
-  /chmod\s*.*$/,
-  /chattr\s*.*$/,
-  /iptables\s*.*$/,
-  /sysctl\s*.*$/,
-  /echo\s*.*$/,
-  /bc\s*.*$/,
-  /tr\s*.*$/,
-  /tac\s*.*$/,
-  /tee\s*.*$/,
-  /awk\s*.*$/,
-  /sed\s*.*$/,
-  /grep\s*.*$/,
-  /cut\s*.*$/,
-  /sort\s*.*$/,
-  /uniq\s*.*$/,
-  /join\s*.*$/,
-  /paste\s*.*$/,
-  /join\s*.*$/,
-  /split\s*.*$/,
-  /xargs\s*.*$/,
-  /awk\s*.*$/,
-  /sed\s*.*$/,
-  /rsync\s*.*$/,
-  /scp\s*.*$/,
-  /wget\s*.*$/,
-  /curl\s*.*$/,
-  /setuid\s*.*$/,
-  /setgid\s*.*$/,
-  /chroot\s*.*$/,
-  /launchctl\s*.*$/,
-  /chkrootkit\s*.*$/,
-  /rkhunter\s*.*$/,
-  /netstat\s*.*$/,
-  /python\s*.*$/,
-  /perl\s*.*$/,
-  /ruby\s*.*$/,
-  /npm\s*.*$/,
-  /yarn\s*.*$/,
-  /pip\s*.*$/,
-  /gem\s*.*$/,
-  /composer\s*.*$/,
-];
 
 async function publishToQueue(queueUrl, message) {
   try {
@@ -439,7 +335,9 @@ async function init() {
               message: `Failed to upload file ${relativeFilePath}: ${uploadError.message}`,
               logType: LogType.ERROR,
             });
-            throw new Error("Failed to upload file ${relativeFilePath}: ${uploadError.message}"); 
+            throw new Error(
+              "Failed to upload file ${relativeFilePath}: ${uploadError.message}"
+            );
           }
         });
       }
