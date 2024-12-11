@@ -70,7 +70,8 @@ const LogType = {
   WARN: "WARN",
 };
 
-let outputFolder = "build";
+const DEFAULT_BUILD_FOLDER = "build";
+const DEFAULT_OUTPUT_FOLDER = "output";
 const outputFolders = ["dist", "build", "public", "release"];
 
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -219,7 +220,7 @@ async function init() {
     await publishLog({ message: "Build Started..." });
     await pushDeploymentStatus(DeploymentStatus.PROG);
 
-    const outDirPath = sanitizePath(path.join(__dirname, "output"));
+    const outDirPath = sanitizePath(path.join(__dirname, DEFAULT_OUTPUT_FOLDER));
 
     const validBuildCommand = checkValidBuildCommandFromPackageFile(outDirPath);
     if (!validBuildCommand) {
@@ -246,20 +247,45 @@ async function init() {
       process.exit(1);
     });
 
+    p.stderr.on("data", async function (data) {
+      await publishLog({
+        message: data.toString(),
+        logType: LogType.ERROR,
+      });
+    });
+
+    p.on("exit", async function (code) {
+      if (code !== 0) {
+        await publishLog({
+          message: `Build process exited with code ${code}`,
+          logType: LogType.ERROR,
+        });
+        await pushDeploymentStatus(DeploymentStatus.FAIL);
+        process.exit(1);
+      }
+    });
+
     p.stdout.on("close", async function () {
       await publishLog({
         message: "npm install & npm build completed successfully",
       });
 
-      for (const folder of outputFolders) {
-        if (fs.existsSync(path.join(__dirname, "output", folder))) {
-          outputFolder = folder;
-          break;
-        }
+      const outputFolder =
+        outputFolders.find((folder) =>
+          fs.existsSync(path.join(__dirname, DEFAULT_OUTPUT_FOLDER, folder))
+        ) || DEFAULT_BUILD_FOLDER;
+
+      const distFolderPath = path.join(__dirname, DEFAULT_OUTPUT_FOLDER, outputFolder);
+      if (!fs.existsSync(distFolderPath)) {
+        throw new Error(`Output folder "${outputFolder}" does not exist.`);
       }
 
-      const distFolderPath = path.join(__dirname, "output", outputFolder);
       const filesToUpload = getAllFiles(distFolderPath);
+      if (filesToUpload.length === 0) {
+        throw new Error(
+          `No files found in the output folder: ${distFolderPath}`
+        );
+      }
 
       await publishLog({
         message: `Starting to uploading in dir ${outputFolder}`,
@@ -285,8 +311,9 @@ async function init() {
         await publishLog({ message: `uploaded ${relativeFilePath}` });
       }
 
-      await publishLog({ message: `Done...` });
+      await publishLog({ message: "All files uploaded successfully." });
       await pushDeploymentStatus(DeploymentStatus.READY);
+      await publishLog({ message: `Done...` });
       process.exit(0);
     });
   } catch (error) {
@@ -314,6 +341,5 @@ process.on("unhandledRejection", async (reason, promise) => {
   await pushDeploymentStatus(DeploymentStatus.FAIL);
   process.exit(1);
 });
-
 
 init();
