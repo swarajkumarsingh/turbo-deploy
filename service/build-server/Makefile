@@ -10,6 +10,9 @@ start:
 test:
 	node script.js
 
+testt:
+	rm -rf node_modules && rm -rf output
+
 install:
 	npm install
 
