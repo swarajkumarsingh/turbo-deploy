@@ -76,8 +76,8 @@ const DeploymentStatus = {
 
 const LogType = {
   INFO: "INFO",
-  ERROR: "ERROR",
   WARN: "WARN",
+  ERROR: "ERROR",
 };
 
 const MAX_RETRIES = 3;
@@ -278,6 +278,7 @@ async function init() {
         name: error.name,
         stack: error.stack.toString(),
       });
+      await pushDeploymentStatus(DeploymentStatus.FAIL);
       process.exit(1);
     });
 
@@ -307,7 +308,7 @@ async function init() {
         DEFAULT_OUTPUT_FOLDER,
         outputFolder
       );
-      
+
       if (!fs.existsSync(distFolderPath)) {
         throw new Error(`Output folder "${outputFolder}" does not exist.`);
       }
