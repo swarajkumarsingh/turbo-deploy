@@ -1,12 +1,14 @@
 import os from "os";
 import fs from "fs";
+import http from "http";
 import path from "path";
 import { dirname } from "path";
-import { spawn } from "child_process";
 import { fileURLToPath } from "url";
+import { spawn } from "child_process";
 import { VULNERABLE_COMMANDS } from "./vulnerableCommands.js";
 
 import dotenv from "dotenv";
+import https from "https";
 import PQueue from "p-queue";
 import mime from "mime-types";
 import retry from "async-retry";
@@ -18,13 +20,13 @@ dotenv.config();
 
 const requiredEnvVars = [
   "APP_NAME",
-  "ENVIRONMENT",
-  "PROJECT_ID",
-  "DEPLOYMENT_ID",
-  "LOG_QUEUE_URL",
-  "STATUS_QUEUE_URL",
-  "S3_BUCKET_NAME",
   "AWS_REGION",
+  "PROJECT_ID",
+  "ENVIRONMENT",
+  "LOG_QUEUE_URL",
+  "DEPLOYMENT_ID",
+  "S3_BUCKET_NAME",
+  "STATUS_QUEUE_URL",
   "AWS_ACCESS_KEY_ID",
   "AWS_SECRET_ACCESS_KEY",
 ];
@@ -38,13 +40,14 @@ requiredEnvVars.forEach((varName) => {
 
 const {
   APP_NAME,
-  ENVIRONMENT,
+  AWS_REGION,
   PROJECT_ID,
+  ENVIRONMENT,
   DEPLOYMENT_ID,
   LOG_QUEUE_URL,
-  STATUS_QUEUE_URL,
   S3_BUCKET_NAME,
-  AWS_REGION,
+  BUILD_TEST_URL,
+  STATUS_QUEUE_URL,
   AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY,
 } = process.env;
@@ -89,7 +92,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const MAX_FILE_SIZE = 1024 * 1024;
-const PACKAGE_JSON_PATH = path.join(__dirname, "output", "package.json");
+const PACKAGE_JSON_PATH = path.join(
+  __dirname,
+  DEFAULT_OUTPUT_FOLDER,
+  "package.json"
+);
+
+const queue = new PQueue({ concurrency: 5 });
 
 async function publishToQueue(queueUrl, message) {
   try {
@@ -153,6 +162,33 @@ function sanitizePath(dirPath) {
   return sanitizedPath;
 }
 
+async function isStatusCode200(url) {
+  return new Promise((resolve, _) => {
+    try {
+      if (!url) {
+        throw new Error("The URL environment variable is not defined.");
+      }
+
+      const protocol = url.startsWith("https") ? https : http;
+
+      protocol
+        .get(url, (res) => {
+          resolve(res.statusCode === 200);
+        })
+        .on("error", (error) => {
+          console.error(
+            "Error occurred while checking the status code:",
+            error.message
+          );
+          resolve(false);
+        });
+    } catch (error) {
+      console.error("Error occurred:", error.message);
+      resolve(false);
+    }
+  });
+}
+
 const getAllFiles = (dirPath, files = []) => {
   const items = fs.readdirSync(dirPath, { withFileTypes: true });
   for (const item of items) {
@@ -197,8 +233,6 @@ function checkValidBuildCommandFromPackageFile() {
     return false;
   }
 }
-
-const queue = new PQueue({ concurrency: 5 });
 
 async function init() {
   try {
@@ -273,6 +307,7 @@ async function init() {
         DEFAULT_OUTPUT_FOLDER,
         outputFolder
       );
+      
       if (!fs.existsSync(distFolderPath)) {
         throw new Error(`Output folder "${outputFolder}" does not exist.`);
       }
@@ -345,6 +380,15 @@ async function init() {
       await queue.onIdle();
 
       await publishLog({ message: "All files uploaded successfully." });
+
+      const ok = isStatusCode200(BUILD_TEST_URL);
+      if (!ok) {
+        await publishLog({
+          message: `Project deployed but in undefined state. Try again later. URL: ${BUILD_TEST_URL}`,
+        });
+      }
+
+      await publishLog({ message: "Deployment testing completed :)" });
       await pushDeploymentStatus(DeploymentStatus.READY);
       await publishLog({ message: "Done..." });
       process.exit(0);
@@ -355,6 +399,7 @@ async function init() {
       message: `Deployment failed: ${error.message}`,
       logType: LogType.ERROR,
     });
+
     await pushDeploymentStatus(DeploymentStatus.FAIL);
     process.exit(1);
   }
@@ -367,11 +412,13 @@ process.on("SIGTERM", async () => {
 
 process.on("unhandledRejection", async (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
+
   await publishLog({
     message: `Unhandled Rejection: ${reason}`,
     logType: LogType.ERROR,
   });
   await pushDeploymentStatus(DeploymentStatus.FAIL);
+
   process.exit(1);
 });
 

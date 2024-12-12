@@ -11,8 +11,7 @@ RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - && \
 WORKDIR /home/app
 
 COPY main.sh main.sh
-COPY script.js script.js
-COPY vulnerableCommands.js vulnerableCommands.js
+COPY *.js ./
 COPY package*.json ./
 
 RUN npm install
