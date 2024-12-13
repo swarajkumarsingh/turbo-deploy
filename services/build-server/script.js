@@ -386,6 +386,7 @@ async function init() {
       if (!ok) {
         await publishLog({
           message: `Project deployed but in undefined state. Try again later. URL: ${BUILD_TEST_URL}`,
+          logType: LogType.WARN,
         });
       }
 
