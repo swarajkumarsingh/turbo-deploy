@@ -36,9 +36,9 @@ func GetDeploymentLogs(ctx *gin.Context) {
 	for rows.Next() {
 		var id int
 		var logEntry gin.H
-		var deployment_id, project_id, data, metadata, data_length, created_at string
+		var deployment_id, project_id, message, stack, log_type, timestamp string
 
-		if err := rows.Scan(&id, &deployment_id, &project_id, &data, &metadata, &data_length, &created_at); err != nil {
+		if err := rows.Scan(&id, &deployment_id, &project_id, &message, &stack, &log_type, &timestamp); err != nil {
 			logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveDeploymentLogsMessage)
 		}
 
@@ -46,10 +46,10 @@ func GetDeploymentLogs(ctx *gin.Context) {
 			"id":            id,
 			"deployment_id": deployment_id,
 			"project_id":    project_id,
-			"data":          data,
-			"metadata":      metadata,
-			"data_length":   data_length,
-			"created_at":    created_at,
+			"message":          message,
+			"stack":      stack,
+			"log_type":   log_type,
+			"created_at":    timestamp,
 		}
 		logs = append(logs, logEntry)
 	}
