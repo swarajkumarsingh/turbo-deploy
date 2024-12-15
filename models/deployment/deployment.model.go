@@ -30,7 +30,7 @@ func GetQueuedProjectCount(context context.Context, project_id int) (int, error)
 }
 
 func CreateDeployment(context context.Context, projectId int, userId string) error {
-	query := `INSERT INTO deployments(user_id, projectId) VALUES($1, $2)`
+	query := `INSERT INTO deployments(user_id, project_id) VALUES($1, $2)`
 	_, err := database.ExecContext(context, query, userId, projectId)
 	if err != nil {
 		return err

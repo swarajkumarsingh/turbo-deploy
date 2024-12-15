@@ -113,13 +113,18 @@ async function publishToQueue(queueUrl, message) {
 }
 
 async function publishLog({
-  message = "",
+  message,
   logType = LogType.INFO,
   cause = "",
   name = "",
   stack = "",
 }) {
   const host = os.hostname();
+
+  if (!Object.values(LogType).includes(logType) || logType.trim() === "") {
+    logType = LogType.INFO;
+  }
+
   const obj = {
     appName: APP_NAME,
     message: stripAnsi(message),
@@ -133,6 +138,11 @@ async function publishLog({
     stack: stripAnsi(stack),
     timestamp: new Date().toISOString(),
   };
+
+  if (!obj.message || obj.message.trim() === "") {
+    console.log("Skipping log with no message");
+    return;
+  }
 
   await publishToQueue(LOG_QUEUE_URL, obj);
   console.log(`Log: ${message}`);
@@ -272,7 +282,7 @@ async function init() {
 
     p.on("error", async function (error) {
       await publishLog({
-        message: `Error starting process: ${error.message}`,
+        message: `Error starting process: ${error}`,
         logType: LogType.ERROR,
         cause: error.cause,
         name: error.name,
