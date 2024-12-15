@@ -77,8 +77,8 @@ func main() {
 
 	// Create server
 	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: r,
+		Addr:         ":8080",
+		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
