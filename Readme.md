@@ -19,7 +19,6 @@ Turbo Deploy is an enterprise-grade deployment platform that automates the entir
 - [Infrastructure](#infrastructure)
 - [Monitoring](#monitoring)
 - [Security](#security)
-- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
