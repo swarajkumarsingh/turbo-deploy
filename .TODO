@@ -17,3 +17,5 @@
 2. in script.js, don't use sync function, use async functions
 3. DONE - use promise to upload files, use p-concurrency package 
 4. use cloudfront from reverse-proxy
+5. Get Deployment Status
+6. List Deployments

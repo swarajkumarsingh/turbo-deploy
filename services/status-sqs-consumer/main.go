@@ -10,23 +10,18 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/joho/godotenv"
-	"github.com/swarajkumarsingh/go-email-consumer-aws-sqs/conf"
-	"github.com/swarajkumarsingh/go-email-consumer-aws-sqs/db"
+	"github.com/swarajkumarsingh/status-sqs-consumer/conf"
+	"github.com/swarajkumarsingh/status-sqs-consumer/db"
 )
 
 var database = db.Mgr.DBConn
 
 type Queue struct {
 	AppName      string `json:"appName"`
-	Message      string `json:"message"`
-	LogType      string `json:"logType"`
 	ProjectId    string `json:"projectId"`
 	DeploymentId string `json:"deploymentId"`
-	Environment  string `json:"environment"`
 	Host         string `json:"host"`
-	Cause        string `json:"cause"`
-	Name         string `json:"name"`
-	Stack        string `json:"stack"`
+	Status       string `json:"Status"`
 	Timestamp    string `json:"timestamp"`
 }
 
@@ -40,10 +35,10 @@ func processMessage(sqsSvc *sqs.SQS, msg *sqs.Message) error {
 		return err
 	}
 
-	log.Printf("AppName: %s, Message: %s, LogType: %s, ProjectId: %s, DeploymentId: %s, Host: %s, Environment: %s, Cause: %s, Stack: %s, Timestamp: %s",
-		queue.AppName, queue.Message, queue.LogType, queue.ProjectId, queue.DeploymentId, queue.Host, queue.Environment, queue.Cause, queue.Stack, queue.Timestamp)
+	log.Printf("AppName: %s, ProjectId: %s, DeploymentId: %s, Host: %s, Status: %s, Timestamp: %s",
+		queue.AppName, queue.ProjectId, queue.DeploymentId, queue.Host, queue.Status, queue.Timestamp)
 
-	if queue.Message == "" {
+	if queue.Status == "" {
 		log.Println("Deleting message with empty 'Message' field")
 		if err := deleteMessage(sqsSvc, receiptHandle); err != nil {
 			return err
@@ -64,13 +59,12 @@ func processMessage(sqsSvc *sqs.SQS, msg *sqs.Message) error {
 }
 
 func CreateDeploymentLog(context context.Context, body Queue) error {
-	if body.LogType == "" {
-		body.LogType = "INFO"
+	if body.Status == "" {
+		body.Status = "PROG"
 	}
-	query := `INSERT INTO deployment_logs(deployment_id, project_id, environment, message, cause, stack, name, host, log_type, timestamp) 
-          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	query := `UPDATE deployments SET status = $1, updated_at = NOW() WHERE id = $2`
 
-	_, err := database.ExecContext(context, query, body.DeploymentId, body.ProjectId, body.Environment, body.Message, body.Cause, body.Stack, body.Name, body.Host, body.LogType, body.Timestamp)
+	_, err := database.ExecContext(context, query, body.Status, body.DeploymentId)
 	if err != nil {
 		return err
 	}
@@ -102,7 +96,6 @@ func main() {
 	}
 
 	sqsSvc := sqs.New(sess)
-
 	log.Println("Listening to messages")
 
 	for {

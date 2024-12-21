@@ -156,7 +156,7 @@ async function pushDeploymentStatus(status) {
     app_name: APP_NAME,
     projectId: PROJECT_ID,
     deploymentId: DEPLOYMENT_ID,
-    sanitizedStatus,
+    status: sanitizedStatus,
     host,
     timestamp: new Date().toISOString(),
   };

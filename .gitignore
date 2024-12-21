@@ -10,3 +10,7 @@ postgres-data
 pgadmin
 pgadmin-servers.json
 *output
+conf.go
+./services/sqs-logs-consumer/conf/conf.go
+./services/sqs-logs-consumer/conf/conf.go
+services/sqs-logs-consumer/conf/conf.go
