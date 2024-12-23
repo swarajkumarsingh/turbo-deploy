@@ -3,13 +3,13 @@ const { Pool } = require("pg");
 const express = require("express");
 const httpProxy = require("http-proxy");
 
-const PORT = 8000;
 const app = express();
-const BASE_PATH = process.env.BASE_PATH;
+const PORT = process.env.PORT || 3333;
+const BASE_PATH = process.env.S3_BASE_PATH;
 
 const pool = new Pool({
   host: process.env.DB_HOST,
-  port: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   user: process.env.DB_USER,
   database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
