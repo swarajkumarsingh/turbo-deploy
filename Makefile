@@ -1,7 +1,10 @@
 SCRIPT_FOLDER_NAME = commands
 
 run:
-	docker compose up --build
+	docker-compose up --build
+
+runa:
+	docker-compose -f docker-compose-alpine.yml up --build
 
 build:
 	docker build -t turbo-deploy . && docker run -p 8080:8080 turbo-deploy
