@@ -1,21 +1,12 @@
 services:
-  postgres:
-    container_name: postgres_container
-    image: postgres:13.5
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
     ports:
-      - 5432:5432
+      - 9090:9090
+    restart: on-failure
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: turbo_deploy
-      PGDATA: /var/lib/postgresql/data/pgdata
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
   golang:
     container_name: golang_container
@@ -38,9 +29,9 @@ services:
       - S3_BUCKET=${S3_BUCKET}
     ports:
       - 8080:8080
-    restart: on-failure
     depends_on:
-      - postgres
+      - prometheus
+    restart: on-failure
     volumes:
       - ./:/app
 

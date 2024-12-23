@@ -11,7 +11,7 @@ var database = db.Mgr.DBConn
 
 func GetProjectById(context context.Context, pid string) (projectModel.Project, error) {
 	var model projectModel.Project
-	query := "SELECT * FROM project WHERE id = $1"
+	query := "SELECT * FROM projects WHERE id = $1"
 	err := database.GetContext(context, &model, query, pid)
 	if err == nil {
 		return model, nil

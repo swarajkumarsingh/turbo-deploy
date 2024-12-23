@@ -1,5 +1,5 @@
 # Use an official Go runtime as a parent image for building the application
-FROM golang:latest as builder
+FROM golang:latest AS builder
 
 # Add Maintainer Info
 LABEL maintainer="Swaraj Kumar Singh <sswaraj169@gmail.com>"

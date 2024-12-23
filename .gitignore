@@ -14,3 +14,4 @@ conf.go
 ./services/sqs-logs-consumer/conf/conf.go
 ./services/sqs-logs-consumer/conf/conf.go
 services/sqs-logs-consumer/conf/conf.go
+.pem
