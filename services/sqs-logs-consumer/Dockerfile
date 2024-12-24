@@ -1,8 +1,8 @@
 # Use an official Go runtime as a parent image
-FROM golang:latest as builder
+FROM golang:latest AS builder
 
 # Add Maintainer Info
-LABEL maintainer="Swaraj kuamr singh Singh <sswaraj169@gmail.com>"
+LABEL maintainer="Swaraj kumar singh Singh <sswaraj169@gmail.com>"
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -18,9 +18,6 @@ COPY . .
 
 # Build the Go application inside the container
 RUN go build -o main .
-
-# Expose port 8080 to the outside world
-EXPOSE 8080
 
 # FOR PROD: Command to run the executable
 CMD ["./main"]

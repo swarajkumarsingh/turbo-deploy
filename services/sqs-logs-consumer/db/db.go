@@ -21,7 +21,6 @@ var Mgr manager
 func init() {
 	var err error
 	sqltrace.Register("postgres", &pq.Driver{}, sqltrace.WithServiceName(conf.DB_URL))
-	log.Println(conf.DB_URL)
 	database, err := sqlxtrace.Open("postgres", conf.DB_URL)
 	if err != nil {
 		log.Fatal(err)
