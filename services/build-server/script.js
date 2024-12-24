@@ -187,7 +187,7 @@ async function isStatusCode200(url) {
         })
         .on("error", (error) => {
           console.error(
-            "Error occurred while checking the status code:",
+            "Warning; something went wrong occurred while checking the status code:",
             error.message
           );
           resolve(false);

@@ -1,17 +1,21 @@
-FROM node:alpine AS builder
+FROM ubuntu:focal
 
-WORKDIR /app
+RUN apt-get update && \
+    apt-get install -y curl git && \
+    apt-get upgrade -y
 
-COPY package*.json ./
+RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs
 
-RUN npm install --production
 
-FROM node:alpine
+WORKDIR /home/app
 
-COPY --from=builder /app/node_modules ./  # Only copy dependencies
 COPY main.sh main.sh
 COPY *.js ./
+COPY package*.json ./
+
+RUN npm install
 
 RUN chmod +x main.sh
 
-ENTRYPOINT [ "/app/main.sh" ]
+ENTRYPOINT [ "/home/app/main.sh" ]
