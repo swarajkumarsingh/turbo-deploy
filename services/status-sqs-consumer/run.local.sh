@@ -1,0 +1,2 @@
+docker compose down
+make run STAGE=local DB_URL= SQS_URL= AWS_REGION= AWS_ACCESS_KEY= AWS_SECRET_ACCESS_KEY=

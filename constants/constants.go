@@ -19,15 +19,7 @@ const DefaultPageSize = 10
 const BcryptHashingCost = 8
 
 const VaultKeySuffix = "-vlt"
+const UserIdMiddlewareConstant = "userId"
 
 const DefaultSenderEmailId = "swaraj.singh.wearingo@gmail.com"
 const DefaultRecipientEmailId = "swaraj.singh.wearingo@gmail.com"
-
-const OtpAESEncryptKey = "fjnsfjsdnfjs"
-
-const StatusBanSeller = "ban"
-const StatusActiveSeller = "active"
-const StatusSuspendSeller = "suspend"
-
-const UserIdMiddlewareConstant = "userId"
-const SellerIdMiddlewareConstant = "sellerId"

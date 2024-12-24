@@ -288,6 +288,90 @@ DB_URL=
    - SES Email Service
    - SQS Queue Service
 
+### AWS TaskDefinition JSON
+
+```hcl
+{
+  "taskDefinitionArn": "arn:aws:ecs:ap-north-99:xxxx:task-definition/builder-task:1",
+  "containerDefinitions": [
+    {
+      "name": "my-image",
+      "image": "xxxx.dkr.ecr.ap-south-1.amazonaws.com/build-server:latest",
+      "cpu": 0,
+      "portMappings": [],
+      "essential": true,
+      "environment": [],
+      "environmentFiles": [],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "ulimits": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/thor-flask",
+          "mode": "non-blocking",
+          "awslogs-create-group": "true",
+          "max-buffer-size": "25m",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs"
+        },
+        "secretOptions": []
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "thor-flask",
+  "executionRoleArn": "arn:aws:iam::xxxx:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "revision": 1,
+  "volumes": [],
+  "status": "ACTIVE",
+  "requiresAttributes": [
+    {
+      "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+    },
+    {
+      "name": "ecs.capability.execution-role-awslogs"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.ecr-auth"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.28"
+    },
+    {
+      "name": "ecs.capability.execution-role-ecr-pull"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+    },
+    {
+      "name": "ecs.capability.task-eni"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+    }
+  ],
+  "placementConstraints": [],
+  "compatibilities": ["EC2", "FARGATE"],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "3072",
+  "runtimePlatform": {
+    "cpuArchitecture": "XxxXX",
+    "operatingSystemFamily": "LINUX"
+  },
+  "registeredAt": "2024-12-xxxx:36.078Z",
+  "registeredBy": "arn:aws:iam::xxxx:root",
+  "enableFaultInjection": false,
+  "tags": []
+}
+
+```
+
 ### Resource Specifications
 
 ```hcl

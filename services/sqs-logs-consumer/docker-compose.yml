@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   golang:
-    container_name: golang_container
+    container_name: golang_container_logs_sqs
     build:
       dockerfile: Dockerfile
     environment:
@@ -13,7 +13,7 @@ services:
       - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     ports:
-      - 8080:8080
+      - 6000:8080
     restart: on-failure
     # For Dockerfile.Local only
     # volumes:

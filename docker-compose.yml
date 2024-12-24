@@ -76,6 +76,18 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - DD_AGENT_HOST=${DD_AGENT_HOST}
       - S3_BUCKET=${S3_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - TaskDefinitionSubnet1=${TaskDefinitionSubnet1}
+      - TaskDefinitionSubnet2=${TaskDefinitionSubnet2}
+      - TaskDefinitionSubnet3=${TaskDefinitionSubnet3}
+      - TaskDefinitionS3BucketName=${TaskDefinitionS3BucketName}
+      - TaskDefinitionSecurityGroup1=${TaskDefinitionSecurityGroup1}
+      - ClusterARN=${ClusterARN}
+      - TaskDefinitionARN=${TaskDefinitionARN}
+      - LOG_QUEUE_URL=${LOG_QUEUE_URL}
+      - STATUS_QUEUE_URL=${STATUS_QUEUE_URL}
     ports:
       - 8080:8080
     restart: on-failure

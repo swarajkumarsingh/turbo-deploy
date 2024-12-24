@@ -31,9 +31,10 @@ const requiredEnvVars = [
   "AWS_SECRET_ACCESS_KEY",
 ];
 
-requiredEnvVars.forEach((varName) => {
+requiredEnvVars.forEach(async (varName) => {
   if (!process.env[varName] || process.env[varName].trim() === "") {
     console.error(`ERROR: Missing or empty environment variable: ${varName}`);
+    await pushDeploymentStatus(DeploymentStatus.FAIL);
     process.exit(1);
   }
 });

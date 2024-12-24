@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/swarajkumarsingh/turbo-deploy/infra/db"
 	projectModel "github.com/swarajkumarsingh/turbo-deploy/models/project"
@@ -29,11 +30,22 @@ func GetQueuedProjectCount(context context.Context, project_id int) (int, error)
 	return total, nil
 }
 
-func CreateDeployment(context context.Context, projectId int, userId string) error {
-	query := `INSERT INTO deployments(user_id, project_id) VALUES($1, $2)`
-	_, err := database.ExecContext(context, query, userId, projectId)
+func CreateDeployment(ctx context.Context, projectId int, userId string) (int, error) {
+	var deploymentId int
+	query := `INSERT INTO deployments(user_id, project_id) VALUES($1, $2) RETURNING id`
+	err := database.QueryRowContext(ctx, query, userId, projectId).Scan(&deploymentId)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return deploymentId, nil
+}
+
+func CreateDeploymentTx(ctx context.Context, tx *sql.Tx, projectId int, userId string) (int, error) {
+	var deploymentId int
+	query := `INSERT INTO deployments(user_id, project_id) VALUES($1, $2) RETURNING id`
+	err := tx.QueryRowContext(ctx, query, userId, projectId).Scan(&deploymentId)
+	if err != nil {
+		return 0, err
+	}
+	return deploymentId, nil
 }

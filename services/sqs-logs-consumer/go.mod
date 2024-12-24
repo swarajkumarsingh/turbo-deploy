@@ -7,6 +7,7 @@ toolchain go1.23.3
 require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/swarajkumarsingh/turbo-deploy v0.0.0-20241214110744-d1a6cc5ea8bd
 	gopkg.in/DataDog/dd-trace-go.v1 v1.70.1
@@ -52,7 +53,6 @@ require (
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
