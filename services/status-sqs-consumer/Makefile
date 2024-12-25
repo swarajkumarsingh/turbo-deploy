@@ -4,6 +4,12 @@
 local:
 	go run *.go
 
+eb_create:
+	eb create turbo-deploy-status-sqs-consumer-env --timeout 20
+
+eb_deploy:
+	eb deploy
+
 run:
 	docker-compose up --build
 

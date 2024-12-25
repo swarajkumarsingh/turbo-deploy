@@ -7,6 +7,12 @@ local:
 run:
 	docker-compose up --build
 
+eb_create:
+	eb create turbo-deploy-logs-sqs-consumer-env --timeout 20
+
+eb_deploy:
+	eb deploy
+
 build:
 	echo "tody"
 
