@@ -135,7 +135,7 @@ func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Pro
 						{Name: aws.String("AWS_REGION"), Value: aws.String(constants.AWS_REGION)},
 						{Name: aws.String("AWS_ACCESS_KEY_ID"), Value: aws.String(constants.AWS_ACCESS_KEY_ID)},
 						{Name: aws.String("AWS_SECRET_ACCESS_KEY"), Value: aws.String(constants.AWS_SECRET_ACCESS_KEY)},
-						{Name: aws.String("GIT_REPOSITORY__URL"), Value: aws.String(project.SourceCodeUrl)},
+						{Name: aws.String("GIT_REPOSITORY_URL"), Value: aws.String(project.SourceCodeUrl)},
 					},
 				},
 			},
