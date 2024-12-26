@@ -7,8 +7,8 @@ import { fileURLToPath } from "url";
 import { spawn } from "child_process";
 import { VULNERABLE_COMMANDS } from "./vulnerableCommands.js";
 
-import dotenv from "dotenv";
 import https from "https";
+import dotenv from "dotenv";
 import PQueue from "p-queue";
 import mime from "mime-types";
 import retry from "async-retry";
@@ -26,6 +26,8 @@ const requiredEnvVars = [
   "LOG_QUEUE_URL",
   "DEPLOYMENT_ID",
   "S3_BUCKET_NAME",
+  "RECIPIENT_EMAIL",
+  "EMAIL_QUEUE_URL",
   "STATUS_QUEUE_URL",
   "AWS_ACCESS_KEY_ID",
   "AWS_SECRET_ACCESS_KEY",
@@ -48,6 +50,8 @@ const {
   LOG_QUEUE_URL,
   S3_BUCKET_NAME,
   BUILD_TEST_URL,
+  EMAIL_QUEUE_URL,
+  RECIPIENT_EMAIL,
   STATUS_QUEUE_URL,
   AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY,
@@ -84,6 +88,10 @@ const LogType = {
 const MAX_RETRIES = 3;
 const MIN_RETRY_TIMEOUT = 1000;
 const MAX_RETRY_TIMEOUT = 5000;
+
+const Application_Status_Subject =
+  "Application Deployment Status | Turbo-Deploy";
+const SUCCESS_DEPLOYMENT_BODY = `Congrats! Your application with Project id: ${PROJECT_ID} & Deployment id: ${DEPLOYMENT_ID} is deployed successfully. Please Visit Turbo Deploy for more details`;
 
 const DEFAULT_BUILD_FOLDER = "build";
 const DEFAULT_OUTPUT_FOLDER = "output";
@@ -163,6 +171,22 @@ async function pushDeploymentStatus(status) {
   };
   await publishToQueue(STATUS_QUEUE_URL, statusMessage);
   console.log(`Status: ${status}`);
+}
+
+async function pushDeploymentEmail(recipient_email, subject, body) {
+  const host = os.hostname();
+
+  const emailMessage = {
+    recipient_email: recipient_email || RECIPIENT_EMAIL,
+    subject: subject || Application_Status_Subject,
+    body: body || SUCCESS_DEPLOYMENT_BODY,
+    projectId: PROJECT_ID,
+    deploymentId: DEPLOYMENT_ID,
+    host,
+    timestamp: new Date().toISOString(),
+  };
+  await publishToQueue(EMAIL_QUEUE_URL, emailMessage);
+  console.log(`email sqs sent!`);
 }
 
 function sanitizePath(dirPath) {
@@ -403,6 +427,11 @@ async function init() {
 
       await publishLog({ message: "Deployment testing completed :)" });
       await pushDeploymentStatus(DeploymentStatus.READY);
+      await pushDeploymentEmail(
+        RECIPIENT_EMAIL,
+        Application_Status_Subject,
+        SUCCESS_DEPLOYMENT_BODY
+      );
       await publishLog({ message: "Done..." });
       process.exit(0);
     });

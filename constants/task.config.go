@@ -16,6 +16,7 @@ const TaskDefinitionContainerName = "builder-image"
 const TaskDefinitionENVAppName = "turbo-deploy-build-server"
 
 var TaskDefinitionLogQueueUrl string = os.Getenv("LOGS_SQS_URL")
+var TaskDefinitionEmailQueueUrl string = os.Getenv("EMAIl_QUEUE_URL")
 var TaskDefinitionStatusQueueUrl string = os.Getenv("STATUS_SQS_URL")
 
 var TaskDefinitionSubnet1 string = os.Getenv("TaskDefinitionSubnet1")

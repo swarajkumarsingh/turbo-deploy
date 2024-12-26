@@ -83,11 +83,6 @@ func CreateDeployment(ctx *gin.Context) {
 
 // spinEcsTask launches an ECS task
 func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Project) (string, error) {
-	logger.Log.Println(db.DB_URL)
-	logger.Log.Println(constants.TaskDefinitionSubnet1)
-	logger.Log.Println(constants.AWS_SECRET_ACCESS_KEY)
-	logger.Log.Println(constants.TaskDefinitionLogQueueUrl)
-
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithCredentialsProvider(aws.CredentialsProviderFunc(func(ctx context.Context) (aws.Credentials, error) {
@@ -106,13 +101,6 @@ func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Pro
 	ecsClient := ecs.NewFromConfig(cfg)
 	var taskCount int32 = constants.LaunchTaskCount
 
-	logger.Log.Println("yo: ", constants.TaskDefinitionLogQueueUrl)
-	logger.Log.Println("yo: ", constants.TaskDefinitionStatusQueueUrl)
-	logger.Log.Println("yo: ", constants.TaskDefinitionS3BucketName)
-	logger.Log.Println("yo: ", constants.AWS_REGION)
-	logger.Log.Println("yo: ", constants.AWS_ACCESS_KEY_ID)
-	logger.Log.Println("yo: ", constants.AWS_SECRET_ACCESS_KEY)
-
 	// Define task input parameters
 	taskInput := &ecs.RunTaskInput{
 		Cluster:        aws.String(constants.ClusterARN),
@@ -129,6 +117,8 @@ func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Pro
 						{Name: aws.String("BUILD_TEST_URL"), Value: aws.String(constants.TaskDefinitionBuildTestUrl)},
 						{Name: aws.String("PROJECT_ID"), Value: aws.String(fmt.Sprint(project.Id))},
 						{Name: aws.String("DEPLOYMENT_ID"), Value: aws.String(fmt.Sprint(deploymentId))},
+						{Name: aws.String("EMAIl_QUEUE_URL"), Value: aws.String(constants.TaskDefinitionEmailQueueUrl)},
+						{Name: aws.String("RECIPIENT_EMAIL"), Value: aws.String(project.UserId)},
 						{Name: aws.String("LOG_QUEUE_URL"), Value: aws.String(constants.TaskDefinitionLogQueueUrl)},
 						{Name: aws.String("STATUS_QUEUE_URL"), Value: aws.String(constants.TaskDefinitionStatusQueueUrl)},
 						{Name: aws.String("S3_BUCKET_NAME"), Value: aws.String(constants.TaskDefinitionS3BucketName)},

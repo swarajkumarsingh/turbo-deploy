@@ -1,3 +1,6 @@
+Send Email on deployment success
+Test
+
 # Extra
 1. When AWS ECS sever is down, will build user project in main server
 2. in script.js, don't use sync function, use async functions

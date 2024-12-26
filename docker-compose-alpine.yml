@@ -39,6 +39,7 @@ services:
       - TaskDefinitionARN=${TaskDefinitionARN}
       - LOGS_SQS_URL=${LOGS_SQS_URL}
       - STATUS_SQS_URL=${STATUS_SQS_URL}
+      - EMAIl_QUEUE_URL=${EMAIl_QUEUE_URL}
     ports:
       - 8080:8080
     depends_on:
