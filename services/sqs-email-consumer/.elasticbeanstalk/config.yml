@@ -1,0 +1,18 @@
+branch-defaults:
+  default:
+    environment: email-sqs-consumer-env
+    group_suffix: null
+global:
+  application_name: email-sqs-consumer
+  branch: null
+  default_ec2_keyname: swaraj-wearingo-pem-key
+  default_platform: Docker running on 64bit Amazon Linux 2023
+  default_region: ap-south-1
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: null
+  repository: null
+  sc: null
+  workspace_type: Application
