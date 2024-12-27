@@ -163,6 +163,15 @@ func GetDeployment(ctx *gin.Context) {
 	})
 }
 
+// get Deployment status
+func GetDeploymentStatus(ctx *gin.Context) {
+	defer errorHandler.Recovery(ctx, http.StatusConflict)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"error": false,
+	})
+}
+
 // get all user Deployment
 func GetAllDeployment(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)

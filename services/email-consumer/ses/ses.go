@@ -23,6 +23,7 @@ func SendEmail(sender, recipient, subject, htmlBody, textBody, charSet string) (
 	})
 
 	if err != nil {
+		log.Println(err)
 		return result, errors.New("something went wrong")
 	}
 
@@ -68,6 +69,7 @@ func SendEmail(sender, recipient, subject, htmlBody, textBody, charSet string) (
 				log.Println(aerr.Error())
 			}
 		}
+		log.Println(err)
 		return result, errors.New("something went wrong")
 	}
 	log.Println("Email Sent to address: " + recipient)

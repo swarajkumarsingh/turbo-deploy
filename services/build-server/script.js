@@ -18,28 +18,17 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 dotenv.config();
 
-const requiredEnvVars = [
-  "APP_NAME",
-  "AWS_REGION",
-  "PROJECT_ID",
-  "ENVIRONMENT",
-  "LOG_QUEUE_URL",
-  "DEPLOYMENT_ID",
-  "S3_BUCKET_NAME",
-  "RECIPIENT_EMAIL",
-  "EMAIL_QUEUE_URL",
-  "STATUS_QUEUE_URL",
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-];
+const DeploymentStatus = {
+  PROG: "PROG",
+  FAIL: "FAIL",
+  READY: "READY",
+};
 
-requiredEnvVars.forEach(async (varName) => {
-  if (!process.env[varName] || process.env[varName].trim() === "") {
-    console.error(`ERROR: Missing or empty environment variable: ${varName}`);
-    await pushDeploymentStatus(DeploymentStatus.FAIL);
-    process.exit(1);
-  }
-});
+const LogType = {
+  INFO: "INFO",
+  WARN: "WARN",
+  ERROR: "ERROR",
+};
 
 const {
   APP_NAME,
@@ -73,23 +62,11 @@ const sqsClient = new SQSClient({
   },
 });
 
-const DeploymentStatus = {
-  PROG: "PROG",
-  FAIL: "FAIL",
-  READY: "READY",
-};
-
-const LogType = {
-  INFO: "INFO",
-  WARN: "WARN",
-  ERROR: "ERROR",
-};
-
 const MAX_RETRIES = 3;
 const MIN_RETRY_TIMEOUT = 1000;
 const MAX_RETRY_TIMEOUT = 5000;
 
-const Application_Status_Subject =
+const APPLICATION_STATUS_SUBJECT =
   "Application Deployment Status | Turbo-Deploy";
 const SUCCESS_DEPLOYMENT_BODY = `Congrats! Your application with Project id: ${PROJECT_ID} & Deployment id: ${DEPLOYMENT_ID} is deployed successfully. Please Visit Turbo Deploy for more details`;
 
@@ -108,6 +85,29 @@ const PACKAGE_JSON_PATH = path.join(
 );
 
 const queue = new PQueue({ concurrency: 5 });
+
+const requiredEnvVars = [
+  "APP_NAME",
+  "AWS_REGION",
+  "PROJECT_ID",
+  "ENVIRONMENT",
+  "LOG_QUEUE_URL",
+  "DEPLOYMENT_ID",
+  "S3_BUCKET_NAME",
+  "RECIPIENT_EMAIL",
+  "EMAIL_QUEUE_URL",
+  "STATUS_QUEUE_URL",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+];
+
+requiredEnvVars.forEach(async (varName) => {
+  if (!process.env[varName] || process.env[varName].trim() === "") {
+    console.error(`ERROR: Missing or empty environment variable: ${varName}`);
+    await pushDeploymentStatus(DeploymentStatus.FAIL);
+    process.exit(1);
+  }
+});
 
 async function publishToQueue(queueUrl, message) {
   try {
@@ -173,20 +173,18 @@ async function pushDeploymentStatus(status) {
   console.log(`Status: ${status}`);
 }
 
-async function pushDeploymentEmail(recipient_email, subject, body) {
-  const host = os.hostname();
-
+async function pushEmailQueue(recipient_email, subject, body) {
   const emailMessage = {
+    appName: APP_NAME,
     recipient_email: recipient_email || RECIPIENT_EMAIL,
-    subject: subject || Application_Status_Subject,
+    subject: subject || APPLICATION_STATUS_SUBJECT,
     body: body || SUCCESS_DEPLOYMENT_BODY,
     projectId: PROJECT_ID,
     deploymentId: DEPLOYMENT_ID,
-    host,
     timestamp: new Date().toISOString(),
   };
   await publishToQueue(EMAIL_QUEUE_URL, emailMessage);
-  console.log(`email sqs sent!`);
+  console.log(`Email Status: Success`);
 }
 
 function sanitizePath(dirPath) {
@@ -267,6 +265,84 @@ function checkValidBuildCommandFromPackageFile() {
   } catch {
     return false;
   }
+}
+
+function getDeploymentSuccessHtml(projectId, deploymentId) {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Application Deployment Status | Turbo-Deploy</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f9f9f9;
+                color: #333;
+                line-height: 1.6;
+            }
+            .container {
+                max-width: 600px;
+                margin: 20px auto;
+                background: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                padding: 20px;
+                border: 1px solid #ddd;
+            }
+            h1 {
+                color: #4CAF50;
+                text-align: center;
+                font-size: 24px;
+            }
+            p {
+                margin: 10px 0;
+            }
+            .details {
+                background: #f1f1f1;
+                border: 1px solid #ddd;
+                padding: 10px;
+                border-radius: 6px;
+                margin: 20px 0;
+            }
+            a {
+                color: #4CAF50;
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 20px;
+                font-size: 12px;
+                color: #666;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Application Deployment Status</h1>
+            <p>Dear User,</p>
+            <p>Congratulations! Your application has been successfully deployed. Below are the deployment details:</p>
+            <div class="details">
+                <p><strong>Project ID:</strong> ${projectId}</p>
+                <p><strong>Deployment ID:</strong> ${deploymentId}</p>
+            </div>
+            <p>You can now access your deployed application and explore its features. For further details, please visit 
+                <a href="#" target="_blank">Turbo Deploy</a>.
+            </p>
+            <p>Thank you for choosing Turbo-Deploy for your application deployment needs. We look forward to supporting your future projects.</p>
+            <div class="footer">
+                <p>&copy; 2024 Turbo-Deploy. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
 }
 
 async function init() {
@@ -427,10 +503,10 @@ async function init() {
 
       await publishLog({ message: "Deployment testing completed :)" });
       await pushDeploymentStatus(DeploymentStatus.READY);
-      await pushDeploymentEmail(
+      await pushEmailQueue(
         RECIPIENT_EMAIL,
-        Application_Status_Subject,
-        SUCCESS_DEPLOYMENT_BODY
+        APPLICATION_STATUS_SUBJECT,
+        getDeploymentSuccessHtml(PROJECT_ID, DEPLOYMENT_ID),
       );
       await publishLog({ message: "Done..." });
       process.exit(0);
