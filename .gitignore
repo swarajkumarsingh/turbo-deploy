@@ -13,3 +13,4 @@ pgadmin-servers.json
 .pem
 logs
 *.log
+services/email-consumer/.elasticbeanstalk/config.yml
