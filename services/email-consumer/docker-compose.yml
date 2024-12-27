@@ -1,17 +1,16 @@
 services:
   golang:
-    container_name: golang_container
+    container_name: golang_container_email_sqs
     build:
       dockerfile: Dockerfile
     environment:
       - STAGE=${STAGE}
       - SQS_URL=${SQS_URL}
       - AWS_TOKEN=${AWS_TOKEN}
+      - SES_DEFAULT_SENDER=${SES_DEFAULT_SENDER}
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-    ports:
-      - 8080:8080
     env_file:
       - .env
     restart: on-failure

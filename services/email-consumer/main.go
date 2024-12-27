@@ -3,16 +3,19 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/joho/godotenv"
 	"github.com/swarajkumarsingh/go-email-consumer-aws-sqs/conf"
 	"github.com/swarajkumarsingh/go-email-consumer-aws-sqs/ses"
+	"github.com/swarajkumarsingh/go-email-consumer-aws-sqs/utils"
 )
 
-var sesSenderEmail string = "swaraj.singh.wearingo@gmail.com"
+var sesDefaultSender string = os.Getenv("SES_DEFAULT_SENDER")
 
 type Queue struct {
 	AppName        string `json:"appName"`
@@ -37,15 +40,15 @@ func processMessage(sqsSvc *sqs.SQS, msg *sqs.Message) error {
 	log.Printf("AppName: %s, Recipient Email: %s, ProjectId: %s, DeploymentId: %s, Timestamp: %s",
 		queue.AppName, queue.RecipientEmail, queue.ProjectId, queue.DeploymentId, queue.Timestamp)
 
-	// valid := utils.ValidEmail(queue.RecipientEmail)
-	// if !valid {
-	// 	log.Println("invalid email address: ", queue.RecipientEmail)
-	// 	if err := deleteMessage(sqsSvc, receiptHandle); err != nil {
-	// 		return err
-	// 	}
-	// }
+	valid := utils.ValidEmail(queue.RecipientEmail)
+	if !valid {
+		log.Println("invalid email address: ", queue.RecipientEmail)
+		if err := deleteMessage(sqsSvc, receiptHandle); err != nil {
+			return err
+		}
+	}
 
-	_, err := ses.SendEmail(sesSenderEmail, queue.RecipientEmail, queue.Subject, queue.Body, "test", "UTF-8")
+	_, err := ses.SendEmail(sesDefaultSender, queue.RecipientEmail, queue.Subject, queue.Body, "test", "UTF-8")
 	if err != nil {
 		log.Printf("Error sending email: %v", err)
 	}
@@ -69,6 +72,16 @@ func deleteMessage(sqsSvc *sqs.SQS, receiptHandle *string) error {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	valid := utils.ValidEmail(sesDefaultSender)
+	if !valid {
+		log.Panicln("Invalid sender email", sesDefaultSender)
+	}
+
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(conf.AWS_REGION),
 	})

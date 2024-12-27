@@ -2,8 +2,7 @@
 .SILENT: build run logs dockerstop
 
 run:
-	docker compose build
-	docker compose up
+	docker compose up --build
 
 build:
 	echo "tody"
