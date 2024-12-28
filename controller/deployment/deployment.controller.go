@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -147,11 +148,25 @@ func GetAllDeployment(ctx *gin.Context) {
 
 func DeleteDeployment(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	id, valid := getDeploymentIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	if err := model.DeleteDeploymentFromUser(reqCtx, id); err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
+	}
+
+	if err := deleteS3FilesForDeployment(id); err != nil {
+		logger.WithRequest(ctx).Errorln("Failed to delete S3 files for deployment:", id, err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":   false,
+		"message": fmt.Sprintf("%d deployment deleted successfully", id),
 	})
-
 }
 
 func DeleteAllDeployment(ctx *gin.Context) {
