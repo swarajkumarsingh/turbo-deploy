@@ -23,6 +23,7 @@ const (
 	UserViewedProductNotFoundMessage      = "empty products views"
 	ReviewNotFoundMessage                 = "review not found"
 	ProjectNotFoundMessage                = "project not found"
+	DeploymentNotFoundMessage             = "deployment not found"
 	FailedToRetrieveProductsMessage       = "failed to retrieve products"
 	FailedToSendEmailMessage              = "failed to send email"
 	FailedToRetrieveUsersMessage          = "failed to retrieve users"
