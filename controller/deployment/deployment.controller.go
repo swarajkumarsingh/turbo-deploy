@@ -116,7 +116,6 @@ func GetAllDeployment(ctx *gin.Context) {
 	offset := getOffsetValue(page, itemsPerPage)
 
 	userId, valid := getUserIdFromReq(ctx)
-	logger.Log.Println("idid ", userId)
 	if !valid {
 		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
 	}
