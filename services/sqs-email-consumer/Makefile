@@ -7,6 +7,12 @@ run:
 build:
 	echo "tody"
 
+eb_create:
+	eb create turbo-deploy-email-sqs-consumer-env --timeout 20
+
+eb_deploy:
+	eb deploy
+
 install:
 	go mod tidy
 
