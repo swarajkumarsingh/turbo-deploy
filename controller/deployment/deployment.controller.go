@@ -88,9 +88,21 @@ func GetDeployment(ctx *gin.Context) {
 
 func GetDeploymentStatus(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	deploymentId, valid := getDeploymentIdFromParam(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidProjectIdMessage)
+	}
+
+	status, err := model.GetDeploymentStatus(reqCtx, deploymentId)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusNotFound, messages.ProjectNotFoundMessage)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error": false,
+		"error":  false,
+		"status": status,
 	})
 }
 
