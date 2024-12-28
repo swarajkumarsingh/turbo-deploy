@@ -171,6 +171,27 @@ func DeleteDeployment(ctx *gin.Context) {
 
 func DeleteAllDeployment(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	uid, valid := getUserIdFromReq(ctx)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	deploymentIDs, err := model.GetAllDeploymentIDsByUser(reqCtx, uid)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, "Failed to fetch deployment IDs")
+	}
+
+	for _, deploymentID := range deploymentIDs {
+		if err := deleteS3FilesForDeployment(deploymentID); err != nil {
+			logger.WithRequest(ctx).Errorln("Failed to delete S3 files for deployment:", deploymentID, err)
+		}
+	}
+
+	if err := model.DeleteAllDeploymentFromUser(reqCtx, uid); err != nil {
+		logger.WithRequest(ctx).Panicln(http.StatusInternalServerError, err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"error":   false,
