@@ -108,10 +108,40 @@ func GetDeploymentStatus(ctx *gin.Context) {
 
 func GetAllDeployment(ctx *gin.Context) {
 	defer errorHandler.Recovery(ctx, http.StatusConflict)
+	reqCtx := ctx.Request.Context()
+
+	page := getCurrentPageValue(ctx)
+	itemsPerPage := getItemPerPageValue(ctx)
+	offset := getOffsetValue(page, itemsPerPage)
+
+	userId, valid := getUserIdFromReq(ctx)
+	logger.Log.Println("idid ", userId)
+	if !valid {
+		logger.WithRequest(ctx).Panicln(http.StatusBadRequest, messages.InvalidUserIdMessage)
+	}
+
+	rows, err := model.GetDeploymentListPaginatedValue(reqCtx, userId, itemsPerPage, offset)
+	if err != nil {
+		logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveProjectsMessage)
+	}
+	defer rows.Close()
+
+	deployments := make([]gin.H, 0)
+
+	for rows.Next() {
+		var id int
+		var projectId, status, readyUrl string
+		if err := rows.Scan(&id, &projectId, &status, &readyUrl); err != nil {
+			logger.WithRequest(ctx).Panicln(messages.FailedToRetrieveProjectsMessage)
+		}
+		deployments = append(deployments, gin.H{"id": id, "projectId": projectId, "status": status, "readyUrl": readyUrl})
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"error":   false,
-		"message": "deployment deleted successfully",
+		"deployments": deployments,
+		"page":        page,
+		"per_page":    itemsPerPage,
+		"total_pages": calculateTotalPages(page, itemsPerPage),
 	})
 }
 
