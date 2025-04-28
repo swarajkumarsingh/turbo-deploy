@@ -29,7 +29,7 @@ func getS3Client() *s3.Client {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithRegion(constants.AWS_REGION),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(constants.AWS_ACCESS_KEY_ID,constants.AWS_SECRET_ACCESS_KEY, "")),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(constants.AWS_ACCESS_KEY_ID, constants.AWS_SECRET_ACCESS_KEY, "")),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to load AWS configuration: %v", err))
@@ -95,8 +95,8 @@ func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Pro
 
 	// Define task input parameters
 	taskInput := &ecs.RunTaskInput{
-		Cluster:        aws.String(constants.ClusterARN),
-		TaskDefinition: aws.String(constants.TaskDefinitionARN),
+		Cluster:        aws.String("arn:aws:ecs:ap-south-1:491085393011:cluster/build-cluster"),
+		TaskDefinition: aws.String("arn:aws:ecs:ap-south-1:491085393011:task-definition/builder-task:3"),
 		Count:          &taskCount,
 		LaunchType:     types.LaunchTypeFargate,
 		Overrides: &types.TaskOverride{
@@ -109,7 +109,7 @@ func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Pro
 						{Name: aws.String("BUILD_TEST_URL"), Value: aws.String(constants.TaskDefinitionBuildTestUrl)},
 						{Name: aws.String("PROJECT_ID"), Value: aws.String(fmt.Sprint(project.Id))},
 						{Name: aws.String("DEPLOYMENT_ID"), Value: aws.String(fmt.Sprint(deploymentId))},
-						{Name: aws.String("EMAIl_QUEUE_URL"), Value: aws.String(constants.TaskDefinitionEmailQueueUrl)},
+						{Name: aws.String("EMAIl_QUEUE_URL"), Value: aws.String("https://sqs.ap-south-1.amazonaws.com/491085393011/turbo-deploy-email-queue")},
 						{Name: aws.String("RECIPIENT_EMAIL"), Value: aws.String(project.UserId)},
 						{Name: aws.String("LOG_QUEUE_URL"), Value: aws.String(constants.TaskDefinitionLogQueueUrl)},
 						{Name: aws.String("STATUS_QUEUE_URL"), Value: aws.String(constants.TaskDefinitionStatusQueueUrl)},
@@ -124,8 +124,8 @@ func spinEcsTask(ctx context.Context, deploymentId int, project projectModel.Pro
 		},
 		NetworkConfiguration: &types.NetworkConfiguration{
 			AwsvpcConfiguration: &types.AwsVpcConfiguration{
-				Subnets:        []string{constants.TaskDefinitionSubnet1, constants.TaskDefinitionSubnet2, constants.TaskDefinitionSubnet3},
-				SecurityGroups: []string{constants.TaskDefinitionSecurityGroup1},
+				Subnets:        []string{"subnet-0059bc11ef7d6770a", "subnet-0ad58add7254176b2", "subnet-005823699c49d0a22"},
+				SecurityGroups: []string{"sg-0e60eba3c7543f186"},
 				AssignPublicIp: types.AssignPublicIpEnabled,
 			},
 		},
